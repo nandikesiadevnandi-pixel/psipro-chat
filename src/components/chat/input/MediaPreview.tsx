@@ -19,6 +19,14 @@ function getMessageType(mimeType: string): MediaSendParams['messageType'] {
   return 'document';
 }
 
+function sanitizeFileName(name: string): string {
+  // Remove acentos
+  const normalized = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  // Substitui espaços e caracteres especiais por underscores
+  // Mantém apenas letras, números, pontos, hífens e underscores
+  return normalized.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+}
+
 export const MediaPreview = ({ file, onSend, onClose }: MediaPreviewProps) => {
   const [caption, setCaption] = useState("");
   const [isUploading, setIsUploading] = useState(false);
@@ -28,7 +36,7 @@ export const MediaPreview = ({ file, onSend, onClose }: MediaPreviewProps) => {
     setIsUploading(true);
     
     try {
-      const fileName = `${Date.now()}-${file.name}`;
+      const fileName = `${Date.now()}-${sanitizeFileName(file.name)}`;
       const { error: uploadError } = await supabase.storage
         .from('whatsapp-media')
         .upload(fileName, file, {
