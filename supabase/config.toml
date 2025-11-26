@@ -2,3 +2,6 @@ project_id = "vxkzxbfglexxjlphbeav"
 
 [functions.evolution-webhook]
 verify_jwt = false
+
+[functions.send-whatsapp-message]
+verify_jwt = false
