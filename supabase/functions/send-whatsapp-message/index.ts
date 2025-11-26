@@ -232,11 +232,20 @@ function buildEvolutionRequest(
     }
 
     case 'audio': {
+      // Format audio data: if it's base64 without data URI prefix, add it
+      let audioData = body.mediaBase64 || body.mediaUrl;
+      
+      if (body.mediaBase64 && !body.mediaBase64.startsWith('data:') && !body.mediaBase64.startsWith('http')) {
+        // Add data URI prefix for base64 audio
+        const mimetype = body.mediaMimetype || 'audio/ogg';
+        audioData = `data:${mimetype};base64,${body.mediaBase64}`;
+      }
+      
       return {
         endpoint: `${baseUrl}/message/sendWhatsAppAudio/${instanceName}`,
         requestBody: {
           number,
-          audio: body.mediaBase64 || body.mediaUrl,
+          audio: audioData,
         },
       };
     }
