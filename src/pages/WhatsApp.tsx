@@ -29,17 +29,6 @@ const WhatsApp = () => {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
-      {/* Header for Settings - Desktop */}
-      {!isMobile && (
-        <div className="absolute top-4 right-4 z-10">
-          <Link to="/whatsapp/settings">
-            <Button variant="ghost" size="icon">
-              <Settings className="h-5 w-5" />
-            </Button>
-          </Link>
-        </div>
-      )}
-
       {/* Sidebar */}
       {showSidebar && instanceId && (
         <div className={`${isMobile ? "w-full" : "w-[350px]"} border-r border-border`}>
@@ -48,16 +37,6 @@ const WhatsApp = () => {
             onSelect={handleSelectConversation}
             instanceId={instanceId}
           />
-          {/* Settings button for mobile in sidebar */}
-          {isMobile && (
-            <div className="absolute top-4 right-4">
-              <Link to="/whatsapp/settings">
-                <Button variant="ghost" size="icon">
-                  <Settings className="h-5 w-5" />
-                </Button>
-              </Link>
-            </div>
-          )}
         </div>
       )}
 
