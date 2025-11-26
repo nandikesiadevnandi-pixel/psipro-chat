@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Plus } from "lucide-react";
+import { Search, Plus, Settings } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -7,6 +7,7 @@ import { useWhatsAppConversations } from "@/hooks/whatsapp";
 import ConversationItem from "./ConversationItem";
 import QuickFilterPills from "./QuickFilterPills";
 import NewConversationModal from "./NewConversationModal";
+import { Link } from "react-router-dom";
 
 interface ConversationsSidebarProps {
   selectedId: string | null;
@@ -34,7 +35,17 @@ const ConversationsSidebar = ({ selectedId, onSelect, instanceId }: Conversation
 
   return (
     <div className="flex flex-col h-full w-80 border-r border-sidebar-border bg-sidebar">
-      {/* Header with search and new conversation */}
+      {/* Title Header */}
+      <div className="p-3 border-b border-sidebar-border flex items-center justify-between">
+        <h1 className="text-lg font-semibold">Conversas</h1>
+        <Link to="/whatsapp/settings">
+          <Button variant="ghost" size="icon">
+            <Settings className="h-5 w-5" />
+          </Button>
+        </Link>
+      </div>
+
+      {/* Search and new conversation */}
       <div className="p-3 space-y-2 border-b border-sidebar-border">
         <div className="flex gap-2">
           <div className="relative flex-1">
