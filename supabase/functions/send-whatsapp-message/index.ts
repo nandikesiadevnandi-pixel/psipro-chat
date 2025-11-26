@@ -204,7 +204,11 @@ function buildEvolutionRequest(
   number: string,
   body: SendMessageRequest
 ): { endpoint: string; requestBody: any } {
-  const baseUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
+  // Remove trailing slash
+  let baseUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
+  
+  // Remove /manager suffix if present (message endpoints are at root level)
+  baseUrl = baseUrl.replace(/\/manager$/, '');
 
   switch (body.messageType) {
     case 'text': {
