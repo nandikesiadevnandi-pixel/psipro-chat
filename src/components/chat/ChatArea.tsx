@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ChatHeader } from "./ChatHeader";
 import { MessagesContainer } from "./MessagesContainer";
-import { MessageInput } from "./MessageInput";
+import { MessageInputContainer, MediaSendParams } from "./input";
 import { MessageCircle } from "lucide-react";
 
 interface ChatAreaProps {
@@ -36,13 +36,22 @@ export const ChatArea = ({ conversationId }: ChatAreaProps) => {
     enabled: !!conversationId,
   });
 
-  const handleSendMessage = (content: string) => {
+  const handleSendText = (content: string) => {
     if (!conversationId || !content.trim()) return;
     
     sendMutation.mutate({
       conversationId,
       content,
       messageType: 'text',
+    });
+  };
+
+  const handleSendMedia = (params: MediaSendParams) => {
+    if (!conversationId) return;
+    
+    sendMutation.mutate({
+      conversationId,
+      ...params,
     });
   };
 
@@ -73,8 +82,10 @@ export const ChatArea = ({ conversationId }: ChatAreaProps) => {
       
       <MessagesContainer messages={messages} isLoading={messagesLoading} />
       
-      <MessageInput
-        onSend={handleSendMessage}
+      <MessageInputContainer
+        conversationId={conversationId}
+        onSendText={handleSendText}
+        onSendMedia={handleSendMedia}
         disabled={sendMutation.isPending}
       />
     </div>

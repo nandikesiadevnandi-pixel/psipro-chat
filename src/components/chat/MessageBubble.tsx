@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Tables } from "@/integrations/supabase/types";
 import { format } from "date-fns";
 import { Check, CheckCheck, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { QuotedMessagePreview } from "./QuotedMessagePreview";
+import { ImageViewerModal } from "./ImageViewerModal";
 
 type Message = Tables<'whatsapp_messages'>;
 
@@ -12,6 +14,7 @@ interface MessageBubbleProps {
 }
 
 export const MessageBubble = ({ message }: MessageBubbleProps) => {
+  const [viewerImage, setViewerImage] = useState<string | null>(null);
   const isFromMe = message.is_from_me;
   const time = format(new Date(message.timestamp), 'HH:mm');
 
@@ -41,8 +44,8 @@ export const MessageBubble = ({ message }: MessageBubbleProps) => {
               <img
                 src={message.media_url}
                 alt="Imagem"
-                className="max-w-xs rounded-md cursor-pointer hover:opacity-90"
-                onClick={() => window.open(message.media_url!, '_blank')}
+                className="max-w-xs rounded-md cursor-pointer hover:opacity-90 transition-opacity"
+                onClick={() => setViewerImage(message.media_url)}
               />
             )}
             {message.content && <p className="text-sm">{message.content}</p>}
@@ -130,6 +133,12 @@ export const MessageBubble = ({ message }: MessageBubbleProps) => {
           {getStatusIcon()}
         </div>
       </Card>
+
+      <ImageViewerModal
+        imageUrl={viewerImage}
+        isOpen={!!viewerImage}
+        onClose={() => setViewerImage(null)}
+      />
     </div>
   );
 };
