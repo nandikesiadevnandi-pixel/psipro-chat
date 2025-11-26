@@ -6,4 +6,5 @@ export { useCreateConversation } from './useCreateConversation';
 export { useWhatsAppSentiment } from './useWhatsAppSentiment';
 export { useWhatsAppMacros } from './useWhatsAppMacros';
 export { useSmartReply } from './useSmartReply';
+export { useWhatsAppMessageSearch } from './useWhatsAppMessageSearch';
 export type { SmartReplySuggestion, SmartReplyResponse } from './useSmartReply';

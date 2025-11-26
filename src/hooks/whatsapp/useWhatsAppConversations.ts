@@ -8,6 +8,7 @@ type Contact = Tables<'whatsapp_contacts'>;
 
 interface ConversationWithContact extends Conversation {
   contact: Contact;
+  isLastMessageFromMe?: boolean;
 }
 
 interface ConversationsFilters {
@@ -43,6 +44,31 @@ export const useWhatsAppConversations = (filters?: ConversationsFilters) => {
       if (error) throw error;
 
       let result = data as unknown as ConversationWithContact[];
+
+      // Buscar is_from_me da última mensagem de cada conversa
+      const conversationIds = result.map(c => c.id);
+      if (conversationIds.length > 0) {
+        const { data: lastMessages } = await supabase
+          .from('whatsapp_messages')
+          .select('conversation_id, is_from_me, timestamp')
+          .in('conversation_id', conversationIds)
+          .order('timestamp', { ascending: false });
+
+        if (lastMessages) {
+          // Agrupar por conversation_id e pegar a primeira (mais recente)
+          const lastMessageMap = new Map<string, boolean>();
+          lastMessages.forEach(msg => {
+            if (!lastMessageMap.has(msg.conversation_id)) {
+              lastMessageMap.set(msg.conversation_id, msg.is_from_me || false);
+            }
+          });
+
+          result = result.map(conv => ({
+            ...conv,
+            isLastMessageFromMe: lastMessageMap.get(conv.id),
+          }));
+        }
+      }
 
       if (filters?.search) {
         const searchLower = filters.search.toLowerCase();

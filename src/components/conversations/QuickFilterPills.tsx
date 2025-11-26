@@ -1,38 +1,62 @@
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Clock } from "lucide-react";
 
-type FilterType = "all" | "unread";
+type FilterType = "all" | "unread" | "waiting";
 
 interface QuickFilterPillsProps {
   activeFilter: FilterType;
   onFilterChange: (filter: FilterType) => void;
+  unreadCount?: number;
+  waitingCount?: number;
 }
 
-const QuickFilterPills = ({ activeFilter, onFilterChange }: QuickFilterPillsProps) => {
-  const filters: { value: FilterType; label: string }[] = [
+const QuickFilterPills = ({ 
+  activeFilter, 
+  onFilterChange,
+  unreadCount = 0,
+  waitingCount = 0
+}: QuickFilterPillsProps) => {
+  const filters: { value: FilterType; label: string; count?: number; icon?: any }[] = [
     { value: "all", label: "Todas" },
-    { value: "unread", label: "Não lidas" },
+    { value: "unread", label: "Não lidas", count: unreadCount },
+    { value: "waiting", label: "Aguardando", count: waitingCount, icon: Clock },
   ];
 
   return (
-    <div className="flex gap-2">
-      {filters.map((filter) => (
-        <Button
-          key={filter.value}
-          variant={activeFilter === filter.value ? "default" : "outline"}
-          size="sm"
-          onClick={() => onFilterChange(filter.value)}
-          className={`
-            text-xs font-medium rounded-full transition-colors
-            ${
-              activeFilter === filter.value
-                ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                : "bg-sidebar-accent text-sidebar-foreground border-sidebar-border hover:bg-sidebar-accent/80"
-            }
-          `}
-        >
-          {filter.label}
-        </Button>
-      ))}
+    <div className="flex gap-2 flex-wrap">
+      {filters.map((filter) => {
+        const isActive = activeFilter === filter.value;
+        const Icon = filter.icon;
+
+        return (
+          <Button
+            key={filter.value}
+            variant={isActive ? "default" : "outline"}
+            size="sm"
+            onClick={() => onFilterChange(filter.value)}
+            className={`
+              h-8 px-3 text-xs font-medium rounded-full transition-colors whitespace-nowrap
+              ${
+                isActive
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                  : "bg-sidebar-accent text-sidebar-foreground border-sidebar-border hover:bg-sidebar-accent/80"
+              }
+            `}
+          >
+            {Icon && <Icon className="h-3 w-3 mr-1.5" />}
+            {filter.label}
+            {filter.count !== undefined && filter.count > 0 && (
+              <Badge
+                variant={isActive ? "secondary" : "default"}
+                className="ml-1.5 h-4 px-1 text-xs"
+              >
+                {filter.count}
+              </Badge>
+            )}
+          </Button>
+        );
+      })}
     </div>
   );
 };
