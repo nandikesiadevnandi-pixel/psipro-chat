@@ -1,38 +1,16 @@
 import { useState } from "react";
-import ConversationList from "@/components/ConversationList";
+import { ConversationsSidebar } from "@/components/conversations";
 import ChatArea from "@/components/ChatArea";
+import { useWhatsAppInstances } from "@/hooks/whatsapp";
 
 const Index = () => {
-  const [selectedConversation, setSelectedConversation] = useState<string>("1");
+  const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
+  const { instances } = useWhatsAppInstances();
 
-  // Mock data - será substituído por dados reais do Supabase
-  const conversations = [
-    {
-      id: "1",
-      contactName: "João Silva",
-      lastMessage: "Obrigado pela ajuda!",
-      lastMessageTime: "10:30",
-      unreadCount: 2,
-      sentiment: 'positive' as const,
-    },
-    {
-      id: "2",
-      contactName: "Maria Santos",
-      lastMessage: "Estou com um problema...",
-      lastMessageTime: "09:15",
-      unreadCount: 0,
-      sentiment: 'negative' as const,
-    },
-    {
-      id: "3",
-      contactName: "Pedro Costa",
-      lastMessage: "Tudo bem?",
-      lastMessageTime: "Ontem",
-      unreadCount: 0,
-      sentiment: 'neutral' as const,
-    },
-  ];
+  // Use first instance by default
+  const instanceId = instances[0]?.id || "";
 
+  // Mock data for ChatArea - will be replaced with real data
   const messages = [
     {
       id: "1",
@@ -46,12 +24,6 @@ const Index = () => {
       timestamp: "10:28",
       isFromMe: false,
     },
-    {
-      id: "3",
-      content: "Obrigado pela ajuda!",
-      timestamp: "10:30",
-      isFromMe: false,
-    },
   ];
 
   const sentiment = {
@@ -62,16 +34,17 @@ const Index = () => {
 
   const handleSendMessage = (message: string) => {
     console.log("Sending message:", message);
-    // Aqui será implementada a lógica de envio via Evolution API
   };
 
   return (
     <div className="flex h-screen w-full overflow-hidden">
-      <ConversationList
-        conversations={conversations}
-        selectedId={selectedConversation}
-        onSelect={setSelectedConversation}
-      />
+      {instanceId && (
+        <ConversationsSidebar
+          selectedId={selectedConversation}
+          onSelect={setSelectedConversation}
+          instanceId={instanceId}
+        />
+      )}
       <ChatArea
         contactName="João Silva"
         messages={messages}
