@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Send, Mic } from "lucide-react";
 import { EmojiPickerButton } from "./EmojiPickerButton";
 import { MediaUploadButton } from "./MediaUploadButton";
+import { AIComposerButton } from "./AIComposerButton";
 import { AudioRecorder } from "./AudioRecorder";
 import { MacroSuggestions } from "./MacroSuggestions";
 import { SmartReplySuggestions } from "./SmartReplySuggestions";
@@ -146,6 +147,12 @@ export const MessageInputContainer = ({
         <MediaUploadButton 
           conversationId={conversationId}
           onSendMedia={onSendMedia}
+          disabled={disabled}
+        />
+        
+        <AIComposerButton
+          message={message}
+          onComposed={(newMessage) => setMessage(newMessage)}
           disabled={disabled}
         />
         

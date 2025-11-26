@@ -5,4 +5,5 @@ export { MediaPreview } from './MediaPreview';
 export { AudioRecorder } from './AudioRecorder';
 export { MacroSuggestions } from './MacroSuggestions';
 export { SmartReplySuggestions } from './SmartReplySuggestions';
+export { AIComposerButton } from './AIComposerButton';
 export type { MediaSendParams } from './MessageInputContainer';

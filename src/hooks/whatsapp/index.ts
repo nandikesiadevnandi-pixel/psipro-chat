@@ -7,4 +7,6 @@ export { useWhatsAppSentiment } from './useWhatsAppSentiment';
 export { useWhatsAppMacros } from './useWhatsAppMacros';
 export { useSmartReply } from './useSmartReply';
 export { useWhatsAppMessageSearch } from './useWhatsAppMessageSearch';
+export { useWhatsAppComposer } from './useWhatsAppComposer';
 export type { SmartReplySuggestion, SmartReplyResponse } from './useSmartReply';
+export type { ComposerAction } from './useWhatsAppComposer';

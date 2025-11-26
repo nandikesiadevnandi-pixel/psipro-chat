@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.suggest-smart-replies]
 verify_jwt = false
+
+[functions.compose-whatsapp-message]
+verify_jwt = false
