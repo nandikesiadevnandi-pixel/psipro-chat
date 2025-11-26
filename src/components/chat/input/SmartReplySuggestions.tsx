@@ -17,17 +17,17 @@ const toneConfig = {
   formal: {
     label: 'Formal',
     borderColor: 'border-blue-500/50',
-    badgeVariant: 'default' as const,
+    badgeClass: 'bg-blue-500 text-white hover:bg-blue-600',
   },
   friendly: {
     label: 'Amigável',
     borderColor: 'border-green-500/50',
-    badgeVariant: 'default' as const,
+    badgeClass: 'bg-green-500 text-white hover:bg-green-600',
   },
   direct: {
     label: 'Direto',
     borderColor: 'border-orange-500/50',
-    badgeVariant: 'default' as const,
+    badgeClass: 'bg-orange-500 text-white hover:bg-orange-600',
   }
 };
 
@@ -73,18 +73,17 @@ export const SmartReplySuggestions = ({
                 <TooltipProvider key={index}>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
+                      <div
                         onClick={() => onSelectSuggestion(suggestion.text)}
-                        className={`min-w-[180px] max-w-[250px] h-auto py-2 px-3 text-left flex-col items-start gap-1 border-2 ${config.borderColor} hover:bg-accent/50 transition-colors`}
+                        className={`w-[220px] flex-shrink-0 p-3 rounded-lg cursor-pointer border-2 ${config.borderColor} bg-background hover:bg-accent/30 transition-colors`}
                       >
-                        <Badge variant={config.badgeVariant} className="text-xs mb-1">
+                        <Badge className={`text-xs ${config.badgeClass}`}>
                           {config.label}
                         </Badge>
-                        <span className="text-sm line-clamp-2 text-foreground">
+                        <p className="mt-2 text-sm text-foreground line-clamp-2 whitespace-normal break-words overflow-hidden">
                           {suggestion.text}
-                        </span>
-                      </Button>
+                        </p>
+                      </div>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="max-w-xs">
                       <p className="text-xs">{suggestion.text}</p>
