@@ -1,10 +1,12 @@
-import { useState, useRef, KeyboardEvent } from "react";
+import { useState, useRef, KeyboardEvent, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Send, Mic } from "lucide-react";
 import { EmojiPickerButton } from "./EmojiPickerButton";
 import { MediaUploadButton } from "./MediaUploadButton";
 import { AudioRecorder } from "./AudioRecorder";
+import { MacroSuggestions } from "./MacroSuggestions";
+import { useWhatsAppMacros } from "@/hooks/whatsapp/useWhatsAppMacros";
 
 export interface MediaSendParams {
   messageType: 'text' | 'image' | 'audio' | 'video' | 'document';
@@ -30,7 +32,28 @@ export const MessageInputContainer = ({
 }: MessageInputContainerProps) => {
   const [message, setMessage] = useState("");
   const [isRecording, setIsRecording] = useState(false);
+  const [showMacroSuggestions, setShowMacroSuggestions] = useState(false);
+  const [filteredMacros, setFilteredMacros] = useState<any[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  const { macros, incrementUsage } = useWhatsAppMacros();
+
+  // Detect /macro: command and filter macros
+  useEffect(() => {
+    const match = message.match(/\/macro:\s*(\S*)$/i);
+    if (match) {
+      const searchTerm = match[1].toLowerCase();
+      const filtered = macros.filter(m => 
+        m.shortcut.toLowerCase().includes(searchTerm) ||
+        m.name.toLowerCase().includes(searchTerm)
+      );
+      setFilteredMacros(filtered);
+      setShowMacroSuggestions(filtered.length > 0);
+    } else {
+      setShowMacroSuggestions(false);
+      setFilteredMacros([]);
+    }
+  }, [message, macros]);
 
   const handleSend = () => {
     if (message.trim() && !disabled) {
@@ -66,6 +89,15 @@ export const MessageInputContainer = ({
     }, 0);
   };
 
+  const handleMacroSelect = (macro: any) => {
+    setMessage(macro.content);
+    incrementUsage(macro.id);
+    setShowMacroSuggestions(false);
+    setTimeout(() => {
+      textareaRef.current?.focus();
+    }, 0);
+  };
+
   if (isRecording) {
     return (
       <div className="p-4 border-t border-border bg-card">
@@ -82,7 +114,14 @@ export const MessageInputContainer = ({
 
   return (
     <div className="p-4 border-t border-border bg-card">
-      <div className="flex gap-2 items-end">
+      <div className="relative flex gap-2 items-end">
+        {showMacroSuggestions && (
+          <MacroSuggestions
+            macros={filteredMacros}
+            onSelect={handleMacroSelect}
+          />
+        )}
+        
         <EmojiPickerButton onEmojiSelect={handleEmojiSelect} disabled={disabled} />
         
         <MediaUploadButton 
