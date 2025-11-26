@@ -1,12 +1,15 @@
-import { useState } from "react";
-import { Search, Plus, Settings } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Search, Plus, Settings, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useWhatsAppConversations } from "@/hooks/whatsapp";
+import { useDebounce } from "@/hooks/useDebounce";
+import { useWhatsAppMessageSearch } from "@/hooks/whatsapp/useWhatsAppMessageSearch";
 import ConversationItem from "./ConversationItem";
 import QuickFilterPills from "./QuickFilterPills";
 import NewConversationModal from "./NewConversationModal";
+import { ConversationFiltersPopover } from "./ConversationFiltersPopover";
 import { Link } from "react-router-dom";
 
 interface ConversationsSidebarProps {
@@ -15,23 +18,85 @@ interface ConversationsSidebarProps {
   instanceId: string;
 }
 
-type FilterType = "all" | "unread";
+type FilterType = "all" | "unread" | "waiting";
 
 const ConversationsSidebar = ({ selectedId, onSelect, instanceId }: ConversationsSidebarProps) => {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");
+  const [sortBy, setSortBy] = useState<string>("recent");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [instanceFilter, setInstanceFilter] = useState<string | null>(null);
   const [isNewConversationOpen, setIsNewConversationOpen] = useState(false);
 
+  // Debounce search for advanced message search
+  const debouncedSearchQuery = useDebounce(search, 300);
+  const { data: messageSearchResults, isLoading: isSearchingMessages } = useWhatsAppMessageSearch(debouncedSearchQuery);
+
   const { conversations, isLoading } = useWhatsAppConversations({
-    instanceId,
-    search,
-    status: "active",
+    instanceId: instanceFilter || instanceId,
+    status: statusFilter === "all" ? undefined : statusFilter,
   });
 
-  // Apply unread filter client-side
-  const filteredConversations = filter === "unread" 
-    ? conversations.filter((conv) => (conv.unread_count || 0) > 0)
-    : conversations;
+  // Contadores para os pills
+  const unreadCount = useMemo(() => 
+    conversations.filter(c => (c.unread_count || 0) > 0).length,
+    [conversations]
+  );
+
+  const waitingCount = useMemo(() =>
+    conversations.filter(c => c.isLastMessageFromMe === false).length,
+    [conversations]
+  );
+
+  // Lógica de filtragem
+  const filteredConversations = useMemo(() => {
+    let result = [...conversations];
+
+    // Busca rápida: nome, telefone e preview da última mensagem
+    const searchLower = search.toLowerCase();
+    const matchesQuickSearch = (conv: typeof conversations[0]) =>
+      conv.contact?.name?.toLowerCase().includes(searchLower) ||
+      conv.contact?.phone_number?.includes(search) ||
+      conv.last_message_preview?.toLowerCase().includes(searchLower);
+
+    // Busca avançada: histórico completo (se tiver 3+ caracteres)
+    const matchesAdvancedSearch = (conv: typeof conversations[0]) =>
+      debouncedSearchQuery.trim().length >= 3 && messageSearchResults
+        ? messageSearchResults.includes(conv.id)
+        : false;
+
+    // Aceita se encontrou na busca rápida OU na busca avançada
+    if (search.trim()) {
+      result = result.filter(conv => matchesQuickSearch(conv) || matchesAdvancedSearch(conv));
+    }
+
+    // Filtros rápidos (pills)
+    if (filter === "unread") {
+      result = result.filter(conv => (conv.unread_count || 0) > 0);
+    } else if (filter === "waiting") {
+      result = result.filter(conv => conv.isLastMessageFromMe === false);
+    }
+
+    // Ordenação
+    if (sortBy === "unread") {
+      result.sort((a, b) => (b.unread_count || 0) - (a.unread_count || 0));
+    } else if (sortBy === "waiting") {
+      result.sort((a, b) => {
+        if (a.isLastMessageFromMe === false && b.isLastMessageFromMe !== false) return -1;
+        if (a.isLastMessageFromMe !== false && b.isLastMessageFromMe === false) return 1;
+        return 0;
+      });
+    } else if (sortBy === "oldest") {
+      result.sort((a, b) => {
+        const dateA = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+        const dateB = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+        return dateA - dateB;
+      });
+    }
+    // sortBy === "recent" já é o padrão da query
+
+    return result;
+  }, [conversations, search, debouncedSearchQuery, messageSearchResults, filter, sortBy]);
 
   return (
     <div className="flex flex-col h-full w-80 border-r border-sidebar-border bg-sidebar">
@@ -54,7 +119,7 @@ const ConversationsSidebar = ({ selectedId, onSelect, instanceId }: Conversation
               placeholder="Buscar conversas..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 bg-sidebar-accent border-sidebar-border"
+              className="pl-9 h-9 bg-sidebar-accent border-sidebar-border"
             />
           </div>
           <Button
@@ -66,7 +131,36 @@ const ConversationsSidebar = ({ selectedId, onSelect, instanceId }: Conversation
           </Button>
         </div>
 
-        <QuickFilterPills activeFilter={filter} onFilterChange={setFilter} />
+        {/* Pills de filtro rápido + Filtros avançados */}
+        <div className="flex items-center justify-between gap-2">
+          <QuickFilterPills 
+            activeFilter={filter} 
+            onFilterChange={setFilter}
+            unreadCount={unreadCount}
+            waitingCount={waitingCount}
+          />
+          <ConversationFiltersPopover
+            statusFilter={statusFilter}
+            onStatusChange={setStatusFilter}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
+            instanceFilter={instanceFilter}
+            onInstanceChange={setInstanceFilter}
+          />
+        </div>
+
+        {/* Indicadores de busca */}
+        {isSearchingMessages && debouncedSearchQuery.trim().length >= 3 && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Buscando no histórico...
+          </div>
+        )}
+        {search.trim() && (
+          <div className="text-xs text-muted-foreground">
+            {filteredConversations.length} conversa{filteredConversations.length !== 1 ? 's' : ''} encontrada{filteredConversations.length !== 1 ? 's' : ''}
+          </div>
+        )}
       </div>
 
       {/* Conversations list */}
@@ -81,14 +175,29 @@ const ConversationsSidebar = ({ selectedId, onSelect, instanceId }: Conversation
           </div>
         ) : (
           <div className="divide-y divide-sidebar-border">
-            {filteredConversations.map((conversation) => (
-              <ConversationItem
-                key={conversation.id}
-                conversation={conversation}
-                isSelected={conversation.id === selectedId}
-                onClick={() => onSelect(conversation.id)}
-              />
-            ))}
+            {filteredConversations.map((conversation) => {
+              // Calcular se foi encontrado no histórico
+              const searchLower = search.toLowerCase();
+              const matchesQuickSearch =
+                conversation.contact?.name?.toLowerCase().includes(searchLower) ||
+                conversation.contact?.phone_number?.includes(search) ||
+                conversation.last_message_preview?.toLowerCase().includes(searchLower);
+
+              const foundByContent =
+                debouncedSearchQuery.trim().length >= 3 &&
+                messageSearchResults?.includes(conversation.id) &&
+                !matchesQuickSearch;
+
+              return (
+                <ConversationItem
+                  key={conversation.id}
+                  conversation={conversation}
+                  isSelected={conversation.id === selectedId}
+                  onClick={() => onSelect(conversation.id)}
+                  foundByContent={foundByContent}
+                />
+              );
+            })}
           </div>
         )}
       </ScrollArea>

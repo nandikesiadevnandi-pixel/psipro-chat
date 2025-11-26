@@ -2,16 +2,20 @@ import { format, isToday, isYesterday, isThisWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Search } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
+import { ResponseStatusIndicator } from "./ResponseStatusIndicator";
 
 type Conversation = Tables<"whatsapp_conversations"> & {
   contact?: Tables<"whatsapp_contacts"> | null;
+  isLastMessageFromMe?: boolean;
 };
 
 interface ConversationItemProps {
   conversation: Conversation;
   isSelected: boolean;
   onClick: () => void;
+  foundByContent?: boolean;
 }
 
 const getSentimentEmoji = (sentiment: string | null) => {
@@ -55,7 +59,12 @@ const getInitials = (name: string) => {
   return name.slice(0, 2).toUpperCase();
 };
 
-const ConversationItem = ({ conversation, isSelected, onClick }: ConversationItemProps) => {
+const ConversationItem = ({ 
+  conversation, 
+  isSelected, 
+  onClick, 
+  foundByContent = false 
+}: ConversationItemProps) => {
   const contactName = conversation.contact?.name || "Desconhecido";
   const profilePicture = conversation.contact?.profile_picture_url;
   const lastMessage = conversation.last_message_preview || "";
@@ -100,19 +109,30 @@ const ConversationItem = ({ conversation, isSelected, onClick }: ConversationIte
           </span>
         </div>
 
-        {/* Preview and unread badge row */}
+        {/* Preview and indicators row */}
         <div className="flex items-center justify-between gap-2">
-          <p className="text-sm text-muted-foreground truncate flex-1">
-            {lastMessage || "Sem mensagens"}
-          </p>
-          {unreadCount > 0 && (
-            <Badge
-              variant="default"
-              className="h-5 min-w-5 px-1.5 rounded-full bg-primary text-primary-foreground text-xs font-medium flex items-center justify-center"
-            >
-              {unreadCount > 99 ? "99+" : unreadCount}
-            </Badge>
-          )}
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+            <p className="text-sm text-muted-foreground truncate">
+              {lastMessage || "Sem mensagens"}
+            </p>
+            {foundByContent && (
+              <Search className="h-3 w-3 text-muted-foreground shrink-0" />
+            )}
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <ResponseStatusIndicator
+              isLastMessageFromMe={conversation.isLastMessageFromMe}
+              conversationStatus={conversation.status || undefined}
+            />
+            {unreadCount > 0 && (
+              <Badge
+                variant="default"
+                className="h-5 min-w-5 px-1.5 rounded-full bg-primary text-primary-foreground text-xs font-medium flex items-center justify-center"
+              >
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </Badge>
+            )}
+          </div>
         </div>
       </div>
     </div>
