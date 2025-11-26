@@ -58,6 +58,88 @@ export type Database = {
           },
         ]
       }
+      whatsapp_conversation_notes: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string | null
+          id: string
+          is_pinned: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string | null
+          id?: string
+          is_pinned?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string | null
+          id?: string
+          is_pinned?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_conversation_notes_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_conversation_summaries: {
+        Row: {
+          action_items: Json | null
+          conversation_id: string
+          created_at: string | null
+          id: string
+          key_points: Json | null
+          messages_count: number | null
+          period_end: string | null
+          period_start: string | null
+          sentiment_at_time: string | null
+          summary: string
+        }
+        Insert: {
+          action_items?: Json | null
+          conversation_id: string
+          created_at?: string | null
+          id?: string
+          key_points?: Json | null
+          messages_count?: number | null
+          period_end?: string | null
+          period_start?: string | null
+          sentiment_at_time?: string | null
+          summary: string
+        }
+        Update: {
+          action_items?: Json | null
+          conversation_id?: string
+          created_at?: string | null
+          id?: string
+          key_points?: Json | null
+          messages_count?: number | null
+          period_end?: string | null
+          period_start?: string | null
+          sentiment_at_time?: string | null
+          summary?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_conversation_summaries_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_conversations: {
         Row: {
           contact_id: string

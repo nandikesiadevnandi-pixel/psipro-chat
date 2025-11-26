@@ -6,3 +6,4 @@ export { SentimentCard } from './SentimentCard';
 export { QuotedMessagePreview } from './QuotedMessagePreview';
 export { ImageViewerModal } from './ImageViewerModal';
 export * from './input';
+export * from './details';
