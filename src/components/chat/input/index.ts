@@ -4,4 +4,5 @@ export { MediaUploadButton } from './MediaUploadButton';
 export { MediaPreview } from './MediaPreview';
 export { AudioRecorder } from './AudioRecorder';
 export { MacroSuggestions } from './MacroSuggestions';
+export { SmartReplySuggestions } from './SmartReplySuggestions';
 export type { MediaSendParams } from './MessageInputContainer';

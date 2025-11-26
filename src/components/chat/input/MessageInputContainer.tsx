@@ -6,7 +6,9 @@ import { EmojiPickerButton } from "./EmojiPickerButton";
 import { MediaUploadButton } from "./MediaUploadButton";
 import { AudioRecorder } from "./AudioRecorder";
 import { MacroSuggestions } from "./MacroSuggestions";
+import { SmartReplySuggestions } from "./SmartReplySuggestions";
 import { useWhatsAppMacros } from "@/hooks/whatsapp/useWhatsAppMacros";
+import { useSmartReply } from "@/hooks/whatsapp/useSmartReply";
 
 export interface MediaSendParams {
   messageType: 'text' | 'image' | 'audio' | 'video' | 'document';
@@ -37,6 +39,7 @@ export const MessageInputContainer = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   const { macros, incrementUsage } = useWhatsAppMacros();
+  const { suggestions, isLoading: isLoadingSmartReplies, isRefreshing, refresh } = useSmartReply(conversationId);
 
   // Detect /macro: command and filter macros
   useEffect(() => {
@@ -98,6 +101,13 @@ export const MessageInputContainer = ({
     }, 0);
   };
 
+  const handleSmartReplySelect = (text: string) => {
+    setMessage(text);
+    setTimeout(() => {
+      textareaRef.current?.focus();
+    }, 0);
+  };
+
   if (isRecording) {
     return (
       <div className="p-4 border-t border-border bg-card">
@@ -113,14 +123,23 @@ export const MessageInputContainer = ({
   }
 
   return (
-    <div className="p-4 border-t border-border bg-card">
-      <div className="relative flex gap-2 items-end">
-        {showMacroSuggestions && (
-          <MacroSuggestions
-            macros={filteredMacros}
-            onSelect={handleMacroSelect}
-          />
-        )}
+    <div className="border-t border-border bg-card">
+      <SmartReplySuggestions
+        suggestions={suggestions}
+        isLoading={isLoadingSmartReplies}
+        isRefreshing={isRefreshing}
+        onSelectSuggestion={handleSmartReplySelect}
+        onRefresh={refresh}
+      />
+      
+      <div className="p-4">
+        <div className="relative flex gap-2 items-end">
+          {showMacroSuggestions && (
+            <MacroSuggestions
+              macros={filteredMacros}
+              onSelect={handleMacroSelect}
+            />
+          )}
         
         <EmojiPickerButton onEmojiSelect={handleEmojiSelect} disabled={disabled} />
         
@@ -158,10 +177,11 @@ export const MessageInputContainer = ({
             <Mic className="w-4 h-4" />
           </Button>
         )}
+        </div>
+        <p className="text-xs text-muted-foreground mt-1">
+          Enter para enviar, Shift+Enter para nova linha
+        </p>
       </div>
-      <p className="text-xs text-muted-foreground mt-1">
-        Enter para enviar, Shift+Enter para nova linha
-      </p>
     </div>
   );
 };

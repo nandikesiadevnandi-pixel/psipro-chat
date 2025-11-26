@@ -5,3 +5,5 @@ export { useWhatsAppSend } from './useWhatsAppSend';
 export { useCreateConversation } from './useCreateConversation';
 export { useWhatsAppSentiment } from './useWhatsAppSentiment';
 export { useWhatsAppMacros } from './useWhatsAppMacros';
+export { useSmartReply } from './useSmartReply';
+export type { SmartReplySuggestion, SmartReplyResponse } from './useSmartReply';
