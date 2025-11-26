@@ -8,5 +8,7 @@ export { useWhatsAppMacros } from './useWhatsAppMacros';
 export { useSmartReply } from './useSmartReply';
 export { useWhatsAppMessageSearch } from './useWhatsAppMessageSearch';
 export { useWhatsAppComposer } from './useWhatsAppComposer';
+export { useWhatsAppMetrics } from './useWhatsAppMetrics';
 export type { SmartReplySuggestion, SmartReplyResponse } from './useSmartReply';
 export type { ComposerAction } from './useWhatsAppComposer';
+export type { WhatsAppMetrics, WhatsAppMetricsFilters } from './useWhatsAppMetrics';
