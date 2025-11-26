@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ConversationsSidebar } from "@/components/conversations";
-import { ChatArea } from "@/components/chat";
-import { useWhatsAppInstances } from "@/hooks/whatsapp";
+import { ChatArea, ConversationDetailsSidebar } from "@/components/chat";
+import { useWhatsAppInstances, useWhatsAppConversations } from "@/hooks/whatsapp";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Settings, ArrowLeft } from "lucide-react";
@@ -9,11 +9,16 @@ import { Link } from "react-router-dom";
 
 const WhatsApp = () => {
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
+  const [isDetailsSidebarCollapsed, setIsDetailsSidebarCollapsed] = useState(false);
   const { instances } = useWhatsAppInstances();
   const isMobile = useIsMobile();
 
   // Use first instance by default
   const instanceId = instances[0]?.id || "";
+
+  // Fetch conversations to get contact name
+  const { conversations } = useWhatsAppConversations({ instanceId });
+  const selectedConv = conversations.find(c => c.id === selectedConversation);
 
   const handleSelectConversation = (id: string | null) => {
     setSelectedConversation(id);
@@ -54,6 +59,16 @@ const WhatsApp = () => {
           )}
           <ChatArea conversationId={selectedConversation} />
         </div>
+      )}
+
+      {/* Details Sidebar - hidden on mobile */}
+      {!isMobile && (
+        <ConversationDetailsSidebar
+          conversationId={selectedConversation}
+          contactName={selectedConv?.contact?.name}
+          isCollapsed={isDetailsSidebarCollapsed}
+          onToggleCollapse={() => setIsDetailsSidebarCollapsed(!isDetailsSidebarCollapsed)}
+        />
       )}
 
       {/* No instance state */}
