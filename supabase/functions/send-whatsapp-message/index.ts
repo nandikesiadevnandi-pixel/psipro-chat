@@ -129,6 +129,23 @@ Deno.serve(async (req) => {
     // Extract message ID from Evolution API response
     const messageId = evolutionData.key?.id || `msg_${Date.now()}`;
 
+    // Extract media URL from Evolution API response
+    let extractedMediaUrl: string | null = null;
+    
+    if (body.messageType === 'audio' && evolutionData.message?.audioMessage?.url) {
+      extractedMediaUrl = evolutionData.message.audioMessage.url;
+    } else if (body.messageType === 'image' && evolutionData.message?.imageMessage?.url) {
+      extractedMediaUrl = evolutionData.message.imageMessage.url;
+    } else if (body.messageType === 'video' && evolutionData.message?.videoMessage?.url) {
+      extractedMediaUrl = evolutionData.message.videoMessage.url;
+    } else if (body.messageType === 'document' && evolutionData.message?.documentMessage?.url) {
+      extractedMediaUrl = evolutionData.message.documentMessage.url;
+    }
+
+    if (extractedMediaUrl) {
+      console.log('[send-whatsapp-message] Extracted media URL:', extractedMediaUrl);
+    }
+
     // Save message to database
     const messageContent = body.messageType === 'text' 
       ? (body.content || '') 
@@ -142,7 +159,7 @@ Deno.serve(async (req) => {
         remote_jid: contact.phone_number,
         content: messageContent,
         message_type: body.messageType,
-        media_url: body.mediaUrl || null,
+        media_url: extractedMediaUrl || body.mediaUrl || null,
         media_mimetype: body.mediaMimetype || null,
         status: 'sent',
         is_from_me: true,
