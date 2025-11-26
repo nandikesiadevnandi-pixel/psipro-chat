@@ -232,14 +232,28 @@ function buildEvolutionRequest(
     }
 
     case 'audio': {
-      // Format audio data: if it's base64 without data URI prefix, add it
-      let audioData = body.mediaBase64 || body.mediaUrl;
-      
-      if (body.mediaBase64 && !body.mediaBase64.startsWith('data:') && !body.mediaBase64.startsWith('http')) {
-        // Add data URI prefix for base64 audio
-        const mimetype = body.mediaMimetype || 'audio/ogg';
-        audioData = `data:${mimetype};base64,${body.mediaBase64}`;
+      // Evolution API expects either a plain base64 string or a public URL
+      let audioData: string | undefined;
+
+      if (body.mediaBase64) {
+        // Strip possible data URI prefix and keep only the base64 payload
+        const base64 = body.mediaBase64.startsWith('data:')
+          ? body.mediaBase64.split(',')[1] || ''
+          : body.mediaBase64;
+
+        audioData = base64;
+      } else if (body.mediaUrl) {
+        audioData = body.mediaUrl;
       }
+
+      if (!audioData) {
+        throw new Error('Missing audio data');
+      }
+
+      console.log('[send-whatsapp-message] Audio payload prepared:', {
+        type: body.mediaBase64 ? 'base64' : 'url',
+        length: audioData.length,
+      });
       
       return {
         endpoint: `${baseUrl}/message/sendWhatsAppAudio/${instanceName}`,
