@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, Plus, Settings, Loader2 } from "lucide-react";
+import { Search, Plus, Settings, Loader2, BarChart3 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -103,11 +103,18 @@ const ConversationsSidebar = ({ selectedId, onSelect, instanceId }: Conversation
       {/* Title Header */}
       <div className="p-3 border-b border-sidebar-border flex items-center justify-between">
         <h1 className="text-lg font-semibold">Conversas</h1>
-        <Link to="/whatsapp/settings">
-          <Button variant="ghost" size="icon">
-            <Settings className="h-5 w-5" />
-          </Button>
-        </Link>
+        <div className="flex items-center gap-1">
+          <Link to="/whatsapp/relatorio">
+            <Button variant="ghost" size="icon" title="Relatórios">
+              <BarChart3 className="h-5 w-5" />
+            </Button>
+          </Link>
+          <Link to="/whatsapp/settings">
+            <Button variant="ghost" size="icon" title="Configurações">
+              <Settings className="h-5 w-5" />
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Search and new conversation */}
