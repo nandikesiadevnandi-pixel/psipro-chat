@@ -29,9 +29,9 @@ export function ContactsSidebar({ selectedContactId, onSelectContact }: Contacts
   );
 
   return (
-    <div className="w-[350px] border-r border-border bg-card flex flex-col h-full">
+    <div className="w-80 border-r border-sidebar-border bg-sidebar flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b border-border">
+      <div className="p-3 border-b border-sidebar-border">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Users className="h-5 w-5 text-primary" />
@@ -57,14 +57,16 @@ export function ContactsSidebar({ selectedContactId, onSelectContact }: Contacts
         </div>
 
         {/* Search */}
-        <div className="relative mb-3">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar contato..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9"
-          />
+        <div className="flex gap-2 mb-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar contato..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 bg-sidebar-accent border-sidebar-border h-9"
+            />
+          </div>
         </div>
 
         {/* Instance Filter */}
@@ -85,7 +87,7 @@ export function ContactsSidebar({ selectedContactId, onSelectContact }: Contacts
 
       {/* Contacts List */}
       <ScrollArea className="flex-1">
-        <div className="p-2">
+        <div className="divide-y divide-sidebar-border">
           {isLoading ? (
             Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="p-3 mb-2">
