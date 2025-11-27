@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      assignment_rules: {
+        Row: {
+          created_at: string | null
+          fixed_agent_id: string | null
+          id: string
+          instance_id: string | null
+          is_active: boolean | null
+          name: string
+          round_robin_agents: string[] | null
+          round_robin_last_index: number | null
+          rule_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          fixed_agent_id?: string | null
+          id?: string
+          instance_id?: string | null
+          is_active?: boolean | null
+          name: string
+          round_robin_agents?: string[] | null
+          round_robin_last_index?: number | null
+          rule_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          fixed_agent_id?: string | null
+          id?: string
+          instance_id?: string | null
+          is_active?: boolean | null
+          name?: string
+          round_robin_agents?: string[] | null
+          round_robin_last_index?: number | null
+          rule_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignment_rules_fixed_agent_id_fkey"
+            columns: ["fixed_agent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignment_rules_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversation_assignments: {
         Row: {
           assigned_by: string | null
