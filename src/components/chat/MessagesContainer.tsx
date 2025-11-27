@@ -1,9 +1,11 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageBubble } from "./MessageBubble";
 import { Tables } from "@/integrations/supabase/types";
 import { format, isToday, isYesterday, isSameWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Button } from "@/components/ui/button";
+import { ChevronDown } from "lucide-react";
 
 type Message = Tables<'whatsapp_messages'>;
 
@@ -14,12 +16,38 @@ interface MessagesContainerProps {
 
 export const MessagesContainer = ({ messages, isLoading }: MessagesContainerProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const [newMessagesCount, setNewMessagesCount] = useState(0);
+  const prevMessagesLengthRef = useRef(messages.length);
+
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+    const threshold = 100;
+    const atBottom = scrollHeight - scrollTop - clientHeight < threshold;
+    setIsAtBottom(atBottom);
+    
+    if (atBottom) setNewMessagesCount(0);
+  };
+
+  const scrollToBottom = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+      setNewMessagesCount(0);
+    }
+  };
 
   useEffect(() => {
-    if (scrollRef.current) {
+    if (isAtBottom && scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    } else if (messages.length > prevMessagesLengthRef.current) {
+      setNewMessagesCount(prev => prev + (messages.length - prevMessagesLengthRef.current));
     }
-  }, [messages]);
+    prevMessagesLengthRef.current = messages.length;
+  }, [messages, isAtBottom]);
 
   const getDateSeparator = (date: Date) => {
     if (isToday(date)) return 'Hoje';
@@ -60,24 +88,41 @@ export const MessagesContainer = ({ messages, isLoading }: MessagesContainerProp
   }
 
   return (
-    <ScrollArea className="flex-1 p-4" viewportRef={scrollRef}>
-      <div className="space-y-4">
-        {messageGroups.map((group, idx) => (
-          <div key={idx}>
-            <div className="flex justify-center my-4">
-              <span className="text-xs px-3 py-1 rounded-full bg-muted text-muted-foreground">
-                {getDateSeparator(group.date)}
-              </span>
+    <div className="flex-1 relative">
+      <ScrollArea className="h-full p-4" viewportRef={scrollRef} onScroll={handleScroll}>
+        <div className="space-y-4">
+          {messageGroups.map((group, idx) => (
+            <div key={idx}>
+              <div className="flex justify-center my-4">
+                <span className="text-xs px-3 py-1 rounded-full bg-muted text-muted-foreground">
+                  {getDateSeparator(group.date)}
+                </span>
+              </div>
+              
+              <div className="space-y-2">
+                {group.messages.map((message) => (
+                  <MessageBubble key={message.id} message={message} />
+                ))}
+              </div>
             </div>
-            
-            <div className="space-y-2">
-              {group.messages.map((message) => (
-                <MessageBubble key={message.id} message={message} />
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </ScrollArea>
+          ))}
+        </div>
+      </ScrollArea>
+      
+      {!isAtBottom && (
+        <Button
+          onClick={scrollToBottom}
+          size="icon"
+          className="absolute bottom-6 right-6 rounded-full shadow-lg bg-background hover:bg-accent border border-border z-10"
+        >
+          <ChevronDown className="h-5 w-5" />
+          {newMessagesCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 min-w-[20px] flex items-center justify-center px-1.5 font-semibold">
+              {newMessagesCount > 99 ? '99+' : newMessagesCount}
+            </span>
+          )}
+        </Button>
+      )}
+    </div>
   );
 };
