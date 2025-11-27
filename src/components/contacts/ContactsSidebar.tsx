@@ -8,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDebounce } from '@/hooks/useDebounce';
+import { UserMenu } from '@/components/auth/UserMenu';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
@@ -68,6 +69,10 @@ export function ContactsSidebar({ selectedContactId, onSelectContact }: Contacts
               </Button>
             </Link>
           </div>
+        </div>
+
+        <div className="mb-3">
+          <UserMenu />
         </div>
 
         {/* Search */}
