@@ -3,11 +3,13 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { InstancesList, AddInstanceDialog } from "@/components/settings";
+import { InstancesList, AddInstanceDialog, TeamMembersList } from "@/components/settings";
 import { MacrosManager } from "@/components/macros";
+import { useAuth } from "@/contexts/AuthContext";
 
 const WhatsAppSettings = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const { isAdmin } = useAuth();
 
   return (
     <div className="min-h-screen bg-background">
@@ -36,6 +38,7 @@ const WhatsAppSettings = () => {
           <TabsList>
             <TabsTrigger value="instances">Instâncias</TabsTrigger>
             <TabsTrigger value="macros">Macros</TabsTrigger>
+            {isAdmin && <TabsTrigger value="team">Equipe</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="instances" className="space-y-4 mt-6">
@@ -51,6 +54,12 @@ const WhatsAppSettings = () => {
           <TabsContent value="macros" className="mt-6">
             <MacrosManager />
           </TabsContent>
+
+          {isAdmin && (
+            <TabsContent value="team" className="mt-6">
+              <TeamMembersList />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
 
