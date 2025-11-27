@@ -140,7 +140,7 @@ async function downloadAndUploadMedia(
   }
 }
 
-// Find or create contact
+// Find or create contact with name update on each message
 async function findOrCreateContact(
   supabase: any,
   instanceId: string,
@@ -149,42 +149,31 @@ async function findOrCreateContact(
   isGroup: boolean
 ): Promise<string | null> {
   try {
-    // Try to find existing contact
-    const { data: existingContact, error: findError } = await supabase
+    // UPSERT: Create if doesn't exist, update name if it does (and name is not just phone number)
+    const shouldUpdateName = name !== phoneNumber;
+    
+    const { data: contact, error } = await supabase
       .from('whatsapp_contacts')
-      .select('id')
-      .eq('instance_id', instanceId)
-      .eq('phone_number', phoneNumber)
-      .maybeSingle();
-
-    if (findError) {
-      console.error('[evolution-webhook] Error finding contact:', findError);
-    }
-
-    if (existingContact) {
-      console.log('[evolution-webhook] Contact found:', existingContact.id);
-      return existingContact.id;
-    }
-
-    // Create new contact
-    const { data: newContact, error: createError } = await supabase
-      .from('whatsapp_contacts')
-      .insert({
+      .upsert({
         instance_id: instanceId,
         phone_number: phoneNumber,
         name: name || phoneNumber,
         is_group: isGroup,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'instance_id,phone_number',
+        ignoreDuplicates: false, // Always update to get the latest name
       })
       .select('id')
       .single();
 
-    if (createError) {
-      console.error('[evolution-webhook] Error creating contact:', createError);
+    if (error) {
+      console.error('[evolution-webhook] Error upserting contact:', error);
       return null;
     }
 
-    console.log('[evolution-webhook] Contact created:', newContact.id);
-    return newContact.id;
+    console.log('[evolution-webhook] Contact upserted:', contact.id, 'Name:', name);
+    return contact.id;
   } catch (error) {
     console.error('[evolution-webhook] Error in findOrCreateContact:', error);
     return null;
@@ -364,11 +353,12 @@ async function processMessageUpsert(payload: EvolutionWebhookPayload, supabase: 
     console.log('[evolution-webhook] Normalized phone:', phone, 'isGroup:', isGroup);
 
     // Find or create contact
+    // If message is from me, use phone number instead of pushName (which would be the instance owner's name)
     const contactId = await findOrCreateContact(
       supabase,
       instanceData.id,
       phone,
-      pushName || phone,
+      key.fromMe ? phone : (pushName || phone),
       isGroup
     );
 
