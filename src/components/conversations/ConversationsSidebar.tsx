@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, Plus, Settings, Loader2, BarChart3 } from "lucide-react";
+import { Search, Plus, Settings, Loader2, BarChart3, ChevronRight, ChevronLeft, MessageSquare } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -16,11 +16,13 @@ interface ConversationsSidebarProps {
   selectedId: string | null;
   onSelect: (id: string) => void;
   instanceId: string;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 type FilterType = "all" | "unread" | "waiting";
 
-const ConversationsSidebar = ({ selectedId, onSelect, instanceId }: ConversationsSidebarProps) => {
+const ConversationsSidebar = ({ selectedId, onSelect, instanceId, isCollapsed, onToggleCollapse }: ConversationsSidebarProps) => {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");
   const [sortBy, setSortBy] = useState<string>("recent");
@@ -98,8 +100,70 @@ const ConversationsSidebar = ({ selectedId, onSelect, instanceId }: Conversation
     return result;
   }, [conversations, search, debouncedSearchQuery, messageSearchResults, filter, sortBy]);
 
+  // Collapsed view
+  if (isCollapsed) {
+    return (
+      <div className="flex flex-col h-full w-14 bg-sidebar items-center py-3 gap-3">
+        {/* Expand button */}
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={onToggleCollapse}
+          title="Expandir"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+        
+        {/* Conversations icon */}
+        <MessageSquare className="h-5 w-5 text-muted-foreground" />
+        
+        {/* New conversation */}
+        <Button 
+          size="icon" 
+          variant="ghost"
+          onClick={() => setIsNewConversationOpen(true)}
+          title="Nova conversa"
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
+        
+        {/* Quick links */}
+        <Link to="/whatsapp/relatorio">
+          <Button variant="ghost" size="icon" title="Relatórios">
+            <BarChart3 className="h-4 w-4" />
+          </Button>
+        </Link>
+        
+        <Link to="/whatsapp/settings">
+          <Button variant="ghost" size="icon" title="Configurações">
+            <Settings className="h-4 w-4" />
+          </Button>
+        </Link>
+        
+        {/* Unread badge */}
+        {unreadCount > 0 && (
+          <div className="mt-auto">
+            <div className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </div>
+          </div>
+        )}
+        
+        <NewConversationModal
+          open={isNewConversationOpen}
+          onOpenChange={setIsNewConversationOpen}
+          instanceId={instanceId}
+          onSuccess={(conversationId) => {
+            onSelect(conversationId);
+            setIsNewConversationOpen(false);
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col h-full w-80 border-r border-sidebar-border bg-sidebar">
+    <div className="flex flex-col h-full w-80 bg-sidebar">
       {/* Title Header */}
       <div className="p-3 border-b border-sidebar-border flex items-center justify-between">
         <h1 className="text-lg font-semibold">Conversas</h1>
@@ -114,6 +178,16 @@ const ConversationsSidebar = ({ selectedId, onSelect, instanceId }: Conversation
               <Settings className="h-5 w-5" />
             </Button>
           </Link>
+          {onToggleCollapse && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={onToggleCollapse}
+              title="Recolher"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
 

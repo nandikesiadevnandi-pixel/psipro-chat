@@ -10,6 +10,7 @@ import { Link } from "react-router-dom";
 const WhatsApp = () => {
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [isDetailsSidebarCollapsed, setIsDetailsSidebarCollapsed] = useState(false);
+  const [isConversationsSidebarCollapsed, setIsConversationsSidebarCollapsed] = useState(false);
   const { instances } = useWhatsAppInstances();
   const isMobile = useIsMobile();
 
@@ -36,11 +37,13 @@ const WhatsApp = () => {
     <div className="flex h-screen w-full overflow-hidden bg-background">
       {/* Sidebar */}
       {showSidebar && instanceId && (
-        <div className={`${isMobile ? "w-full" : "w-[350px]"} border-r border-border`}>
+        <div className={`${isMobile ? "w-full" : isConversationsSidebarCollapsed ? "w-14" : "w-[350px]"} border-r border-border`}>
           <ConversationsSidebar
             selectedId={selectedConversation}
             onSelect={handleSelectConversation}
             instanceId={instanceId}
+            isCollapsed={!isMobile && isConversationsSidebarCollapsed}
+            onToggleCollapse={() => setIsConversationsSidebarCollapsed(!isConversationsSidebarCollapsed)}
           />
         </div>
       )}
