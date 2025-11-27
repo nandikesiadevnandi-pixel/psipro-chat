@@ -11,6 +11,7 @@ import QuickFilterPills from "./QuickFilterPills";
 import NewConversationModal from "./NewConversationModal";
 import { ConversationFiltersPopover } from "./ConversationFiltersPopover";
 import { NotificationToggle } from "@/components/notifications/NotificationToggle";
+import { UserMenu } from "@/components/auth/UserMenu";
 import { Link } from "react-router-dom";
 
 interface ConversationsSidebarProps {
@@ -172,36 +173,39 @@ const ConversationsSidebar = ({ selectedId, onSelect, instanceId, isCollapsed, o
   return (
     <div className="flex flex-col h-full w-80 bg-sidebar">
       {/* Title Header */}
-      <div className="p-3 border-b border-sidebar-border flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Conversas</h1>
-        <div className="flex items-center gap-1">
-          <NotificationToggle />
-          <Link to="/whatsapp/contatos">
-            <Button variant="ghost" size="icon" title="Contatos">
-              <Users className="h-5 w-5" />
-            </Button>
-          </Link>
-          <Link to="/whatsapp/relatorio">
-            <Button variant="ghost" size="icon" title="Relatórios">
-              <BarChart3 className="h-5 w-5" />
-            </Button>
-          </Link>
-          <Link to="/whatsapp/settings">
-            <Button variant="ghost" size="icon" title="Configurações">
-              <Settings className="h-5 w-5" />
-            </Button>
-          </Link>
-          {onToggleCollapse && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={onToggleCollapse}
-              title="Recolher"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-          )}
+      <div className="p-3 border-b border-sidebar-border">
+        <div className="flex items-center justify-between mb-3">
+          <h1 className="text-lg font-semibold">Conversas</h1>
+          <div className="flex items-center gap-1">
+            <NotificationToggle />
+            <Link to="/whatsapp/contatos">
+              <Button variant="ghost" size="icon" title="Contatos">
+                <Users className="h-5 w-5" />
+              </Button>
+            </Link>
+            <Link to="/whatsapp/relatorio">
+              <Button variant="ghost" size="icon" title="Relatórios">
+                <BarChart3 className="h-5 w-5" />
+              </Button>
+            </Link>
+            <Link to="/whatsapp/settings">
+              <Button variant="ghost" size="icon" title="Configurações">
+                <Settings className="h-5 w-5" />
+              </Button>
+            </Link>
+            {onToggleCollapse && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={onToggleCollapse}
+                title="Recolher"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
+        <UserMenu />
       </div>
 
       {/* Search and new conversation */}
