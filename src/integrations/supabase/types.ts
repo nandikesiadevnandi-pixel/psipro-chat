@@ -22,6 +22,7 @@ export type Database = {
           is_group: boolean | null
           metadata: Json | null
           name: string
+          notes: string | null
           phone_number: string
           profile_picture_url: string | null
           updated_at: string
@@ -33,6 +34,7 @@ export type Database = {
           is_group?: boolean | null
           metadata?: Json | null
           name: string
+          notes?: string | null
           phone_number: string
           profile_picture_url?: string | null
           updated_at?: string
@@ -44,6 +46,7 @@ export type Database = {
           is_group?: boolean | null
           metadata?: Json | null
           name?: string
+          notes?: string | null
           phone_number?: string
           profile_picture_url?: string | null
           updated_at?: string

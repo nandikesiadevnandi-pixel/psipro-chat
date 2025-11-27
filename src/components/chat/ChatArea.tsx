@@ -1,5 +1,5 @@
 import { useWhatsAppMessages, useWhatsAppSend, useWhatsAppSentiment } from "@/hooks/whatsapp";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ChatHeader } from "./ChatHeader";
 import { MessagesContainer } from "./MessagesContainer";
@@ -14,6 +14,7 @@ export const ChatArea = ({ conversationId }: ChatAreaProps) => {
   const { messages, isLoading: messagesLoading } = useWhatsAppMessages(conversationId);
   const { sentiment, isAnalyzing, analyze } = useWhatsAppSentiment(conversationId);
   const sendMutation = useWhatsAppSend();
+  const queryClient = useQueryClient();
 
   // Fetch conversation details including contact
   const { data: conversation } = useQuery({
@@ -35,6 +36,12 @@ export const ChatArea = ({ conversationId }: ChatAreaProps) => {
     },
     enabled: !!conversationId,
   });
+
+  const handleRefresh = () => {
+    if (!conversationId) return;
+    queryClient.invalidateQueries({ queryKey: ['conversation', conversationId] });
+    queryClient.invalidateQueries({ queryKey: ['whatsapp', 'conversations'] });
+  };
 
   const handleSendText = (content: string) => {
     if (!conversationId || !content.trim()) return;
@@ -79,6 +86,8 @@ export const ChatArea = ({ conversationId }: ChatAreaProps) => {
         isAnalyzing={isAnalyzing}
         onAnalyze={analyze}
         conversationId={conversationId}
+        conversation={conversation}
+        onRefresh={handleRefresh}
       />
       
       <MessagesContainer messages={messages} isLoading={messagesLoading} />

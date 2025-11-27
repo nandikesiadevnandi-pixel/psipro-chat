@@ -6,6 +6,7 @@ import { Tables } from "@/integrations/supabase/types";
 import { Link } from "react-router-dom";
 import { useConversationTopics } from "@/hooks/whatsapp/useConversationTopics";
 import { TopicBadges } from "./topics/TopicBadges";
+import { ChatHeaderMenu } from "./ChatHeaderMenu";
 
 type Contact = Tables<'whatsapp_contacts'>;
 type Sentiment = Tables<'whatsapp_sentiment_analysis'>;
@@ -16,9 +17,11 @@ interface ChatHeaderProps {
   isAnalyzing: boolean;
   onAnalyze: () => void;
   conversationId?: string;
+  conversation?: any;
+  onRefresh?: () => void;
 }
 
-export const ChatHeader = ({ contact, sentiment, isAnalyzing, onAnalyze, conversationId }: ChatHeaderProps) => {
+export const ChatHeader = ({ contact, sentiment, isAnalyzing, onAnalyze, conversationId, conversation, onRefresh }: ChatHeaderProps) => {
   const { data: topicsData } = useConversationTopics(conversationId || null);
   
   if (!contact) return null;
@@ -70,6 +73,10 @@ export const ChatHeader = ({ contact, sentiment, isAnalyzing, onAnalyze, convers
             <RefreshCw className={`w-4 h-4 ${isAnalyzing ? 'animate-spin' : ''}`} />
             <span className="ml-2">Analisar</span>
           </Button>
+
+          {conversation && (
+            <ChatHeaderMenu conversation={conversation} onRefresh={onRefresh} />
+          )}
 
           <Link to="/whatsapp/settings">
             <Button variant="ghost" size="icon">

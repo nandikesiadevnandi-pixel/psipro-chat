@@ -13,6 +13,7 @@ export { useConversationSummaries } from './useConversationSummaries';
 export { useConversationNotes } from './useConversationNotes';
 export { useConversationTopics } from './useConversationTopics';
 export { useCategorizeConversation } from './useCategorizeConversation';
+export { useWhatsAppActions } from './useWhatsAppActions';
 export type { SmartReplySuggestion, SmartReplyResponse } from './useSmartReply';
 export type { ComposerAction } from './useWhatsAppComposer';
 export type { WhatsAppMetrics, WhatsAppMetricsFilters } from './useWhatsAppMetrics';

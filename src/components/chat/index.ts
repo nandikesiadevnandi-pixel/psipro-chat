@@ -5,5 +5,7 @@ export { MessageBubble } from './MessageBubble';
 export { SentimentCard } from './SentimentCard';
 export { QuotedMessagePreview } from './QuotedMessagePreview';
 export { ImageViewerModal } from './ImageViewerModal';
+export { ChatHeaderMenu } from './ChatHeaderMenu';
+export { EditContactModal } from './EditContactModal';
 export * from './input';
 export * from './details';
