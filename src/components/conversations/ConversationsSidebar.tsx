@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Search, Plus, Settings, Loader2, BarChart3, ChevronRight, ChevronLeft, MessageSquare, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -29,26 +29,24 @@ const ConversationsSidebar = ({ selectedId, onSelect, instanceId, isCollapsed, o
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [instanceFilter, setInstanceFilter] = useState<string | null>(null);
   const [isNewConversationOpen, setIsNewConversationOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
 
   // Debounce search for advanced message search
   const debouncedSearchQuery = useDebounce(search, 300);
   const { data: messageSearchResults, isLoading: isSearchingMessages } = useWhatsAppMessageSearch(debouncedSearchQuery);
 
-  const { conversations, isLoading } = useWhatsAppConversations({
+  const { conversations, totalCount, totalPages, unreadCount, waitingCount, isLoading } = useWhatsAppConversations({
     instanceId: instanceFilter || instanceId,
     status: statusFilter === "all" ? undefined : statusFilter,
+    page: currentPage,
+    pageSize,
   });
 
-  // Contadores para os pills
-  const unreadCount = useMemo(() => 
-    conversations.filter(c => (c.unread_count || 0) > 0).length,
-    [conversations]
-  );
-
-  const waitingCount = useMemo(() =>
-    conversations.filter(c => c.isLastMessageFromMe === false).length,
-    [conversations]
-  );
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [instanceFilter, statusFilter, filter, debouncedSearchQuery]);
 
   // Lógica de filtragem
   const filteredConversations = useMemo(() => {
@@ -148,7 +146,7 @@ const ConversationsSidebar = ({ selectedId, onSelect, instanceId, isCollapsed, o
         
         {/* Unread badge */}
         {unreadCount > 0 && (
-          <div className="mt-auto">
+          <div className="mt-auto mb-2">
             <div className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold">
               {unreadCount > 99 ? '99+' : unreadCount}
             </div>
@@ -293,6 +291,36 @@ const ConversationsSidebar = ({ selectedId, onSelect, instanceId, isCollapsed, o
           </div>
         )}
       </ScrollArea>
+
+      {/* Pagination Footer */}
+      <div className="p-3 border-t border-sidebar-border flex items-center justify-between">
+        <span className="text-xs text-muted-foreground">
+          {totalCount} conversa{totalCount !== 1 ? 's' : ''}
+        </span>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => setCurrentPage(p => p - 1)}
+            disabled={currentPage === 1 || isLoading}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="text-sm min-w-[60px] text-center">
+            {currentPage} / {totalPages || 1}
+          </span>
+          <Button 
+            variant="outline" 
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => setCurrentPage(p => p + 1)}
+            disabled={currentPage >= totalPages || isLoading}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
 
       <NewConversationModal
         open={isNewConversationOpen}
