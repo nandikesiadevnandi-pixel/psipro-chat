@@ -15,14 +15,22 @@ export interface ContactWithMetrics {
   last_interaction: string | null;
 }
 
+export interface ContactsResult {
+  contacts: ContactWithMetrics[];
+  totalCount: number;
+  totalPages: number;
+}
+
 export const useWhatsAppContacts = (
   instanceId?: string, 
   searchTerm?: string,
-  sortBy: ContactSortOption = 'last_interaction'
+  sortBy: ContactSortOption = 'last_interaction',
+  page: number = 1,
+  pageSize: number = 20
 ) => {
   return useQuery({
-    queryKey: ['whatsapp-contacts', instanceId, searchTerm, sortBy],
-    queryFn: async (): Promise<ContactWithMetrics[]> => {
+    queryKey: ['whatsapp-contacts', instanceId, searchTerm, sortBy, page, pageSize],
+    queryFn: async (): Promise<ContactsResult> => {
       let query = supabase
         .from('whatsapp_contacts')
         .select(`
@@ -41,6 +49,28 @@ export const useWhatsAppContacts = (
       if (searchTerm && searchTerm.length > 0) {
         query = query.or(`name.ilike.%${searchTerm}%,phone_number.ilike.%${searchTerm}%`);
       }
+
+      // Get total count first
+      let countQuery = supabase
+        .from('whatsapp_contacts')
+        .select('*', { count: 'exact', head: true });
+
+      if (instanceId) {
+        countQuery = countQuery.eq('instance_id', instanceId);
+      }
+
+      if (searchTerm && searchTerm.length > 0) {
+        countQuery = countQuery.or(`name.ilike.%${searchTerm}%,phone_number.ilike.%${searchTerm}%`);
+      }
+
+      const { count: totalCount, error: countError } = await countQuery;
+
+      if (countError) throw countError;
+
+      // Apply pagination
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+      query = query.range(from, to);
 
       const { data: contacts, error } = await query;
 
@@ -96,7 +126,7 @@ export const useWhatsAppContacts = (
       );
 
       // Ordenar baseado no parâmetro sortBy
-      return contactsWithMetrics.sort((a, b) => {
+      const sortedContacts = contactsWithMetrics.sort((a, b) => {
         switch (sortBy) {
           case 'name_asc':
             return a.name.localeCompare(b.name, 'pt-BR');
@@ -111,6 +141,12 @@ export const useWhatsAppContacts = (
             return new Date(b.last_interaction).getTime() - new Date(a.last_interaction).getTime();
         }
       });
+
+      return {
+        contacts: sortedContacts,
+        totalCount: totalCount || 0,
+        totalPages: Math.ceil((totalCount || 0) / pageSize),
+      };
     },
     staleTime: 30000,
   });

@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
-import { Search, Users, MessageSquare, BarChart3, Settings } from 'lucide-react';
+import { Search, Users, MessageSquare, BarChart3, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useWhatsAppContacts, ContactSortOption } from '@/hooks/whatsapp/useWhatsAppContacts';
 import { useWhatsAppInstances } from '@/hooks/whatsapp';
 import { ContactItem } from './ContactItem';
@@ -20,15 +20,27 @@ export function ContactsSidebar({ selectedContactId, onSelectContact }: Contacts
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedInstanceId, setSelectedInstanceId] = useState<string>('all');
   const [sortBy, setSortBy] = useState<ContactSortOption>('last_interaction');
+  const [currentPage, setCurrentPage] = useState(1);
   
   const debouncedSearch = useDebounce(searchTerm, 300);
   
   const { instances } = useWhatsAppInstances();
-  const { data: contacts, isLoading } = useWhatsAppContacts(
+  const { data, isLoading } = useWhatsAppContacts(
     selectedInstanceId === 'all' ? undefined : selectedInstanceId,
     debouncedSearch,
-    sortBy
+    sortBy,
+    currentPage,
+    20
   );
+
+  const contacts = data?.contacts || [];
+  const totalCount = data?.totalCount || 0;
+  const totalPages = data?.totalPages || 1;
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedInstanceId, debouncedSearch]);
 
   return (
     <div className="w-80 border-r border-sidebar-border bg-sidebar flex flex-col h-full">
@@ -115,7 +127,7 @@ export function ContactsSidebar({ selectedContactId, onSelectContact }: Contacts
                 </div>
               </div>
             ))
-          ) : contacts && contacts.length > 0 ? (
+          ) : contacts.length > 0 ? (
             contacts.map((contact) => (
               <ContactItem
                 key={contact.id}
@@ -132,6 +144,38 @@ export function ContactsSidebar({ selectedContactId, onSelectContact }: Contacts
           )}
         </div>
       </ScrollArea>
+
+      {/* Pagination Footer */}
+      {totalPages > 1 && (
+        <div className="p-3 border-t border-sidebar-border flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">
+            {totalCount} {totalCount === 1 ? 'contato' : 'contatos'}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="h-8 w-8"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm font-medium min-w-[60px] text-center">
+              {currentPage} / {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage >= totalPages}
+              className="h-8 w-8"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
