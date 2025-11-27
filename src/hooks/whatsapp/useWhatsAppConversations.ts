@@ -15,21 +15,37 @@ interface ConversationsFilters {
   instanceId?: string;
   search?: string;
   status?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface ConversationsResult {
+  conversations: ConversationWithContact[];
+  totalCount: number;
+  totalPages: number;
+  unreadCount: number;
+  waitingCount: number;
 }
 
 export const useWhatsAppConversations = (filters?: ConversationsFilters) => {
   const queryClient = useQueryClient();
+  const page = filters?.page || 1;
+  const pageSize = filters?.pageSize || 20;
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
 
-  const { data: conversations = [], isLoading, error } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['whatsapp', 'conversations', filters],
     queryFn: async () => {
+      // Query 1: Get paginated conversations
       let query = supabase
         .from('whatsapp_conversations')
         .select(`
           *,
           contact:whatsapp_contacts(*)
         `)
-        .order('last_message_at', { ascending: false, nullsFirst: false });
+        .order('last_message_at', { ascending: false, nullsFirst: false })
+        .range(from, to);
 
       if (filters?.instanceId) {
         query = query.eq('instance_id', filters.instanceId);
@@ -39,47 +55,110 @@ export const useWhatsAppConversations = (filters?: ConversationsFilters) => {
         query = query.eq('status', filters.status);
       }
 
-      const { data, error } = await query;
+      const { data: conversationsData, error } = await query;
 
       if (error) throw error;
 
-      let result = data as unknown as ConversationWithContact[];
+      let result = conversationsData as unknown as ConversationWithContact[];
 
-      // Buscar is_from_me da última mensagem de cada conversa
+      // Query 2: Get total count (without pagination)
+      let countQuery = supabase
+        .from('whatsapp_conversations')
+        .select('*', { count: 'exact', head: true });
+
+      if (filters?.instanceId) {
+        countQuery = countQuery.eq('instance_id', filters.instanceId);
+      }
+
+      if (filters?.status) {
+        countQuery = countQuery.eq('status', filters.status);
+      }
+
+      const { count: totalCount } = await countQuery;
+
+      // Query 3: Get unread count (all conversations)
+      let unreadQuery = supabase
+        .from('whatsapp_conversations')
+        .select('unread_count', { count: 'exact' })
+        .gt('unread_count', 0);
+
+      if (filters?.instanceId) {
+        unreadQuery = unreadQuery.eq('instance_id', filters.instanceId);
+      }
+
+      if (filters?.status) {
+        unreadQuery = unreadQuery.eq('status', filters.status);
+      }
+
+      const { count: unreadCount } = await unreadQuery;
+
+      // Buscar is_from_me da última mensagem de cada conversa (só das paginadas)
       const conversationIds = result.map(c => c.id);
-      if (conversationIds.length > 0) {
-        const { data: lastMessages } = await supabase
+      
+      // Também buscar todas as conversas para calcular waitingCount
+      let allConversationsQuery = supabase
+        .from('whatsapp_conversations')
+        .select('id');
+
+      if (filters?.instanceId) {
+        allConversationsQuery = allConversationsQuery.eq('instance_id', filters.instanceId);
+      }
+
+      if (filters?.status) {
+        allConversationsQuery = allConversationsQuery.eq('status', filters.status);
+      }
+
+      const { data: allConversations } = await allConversationsQuery;
+      const allConversationIds = allConversations?.map(c => c.id) || [];
+
+      if (allConversationIds.length > 0) {
+        const { data: allLastMessages } = await supabase
           .from('whatsapp_messages')
           .select('conversation_id, is_from_me, timestamp')
-          .in('conversation_id', conversationIds)
+          .in('conversation_id', allConversationIds)
           .order('timestamp', { ascending: false });
 
-        if (lastMessages) {
+        if (allLastMessages) {
           // Agrupar por conversation_id e pegar a primeira (mais recente)
           const lastMessageMap = new Map<string, boolean>();
-          lastMessages.forEach(msg => {
+          allLastMessages.forEach(msg => {
             if (!lastMessageMap.has(msg.conversation_id)) {
               lastMessageMap.set(msg.conversation_id, msg.is_from_me || false);
             }
           });
 
+          // Aplicar aos resultados paginados
           result = result.map(conv => ({
             ...conv,
             isLastMessageFromMe: lastMessageMap.get(conv.id),
           }));
+
+          // Calcular waitingCount (mensagens do cliente sem resposta)
+          const waitingCount = allConversationIds.filter(
+            id => lastMessageMap.get(id) === false
+          ).length;
+
+          const totalPages = Math.ceil((totalCount || 0) / pageSize);
+
+          return {
+            conversations: result,
+            totalCount: totalCount || 0,
+            totalPages,
+            unreadCount: unreadCount || 0,
+            waitingCount,
+          } as ConversationsResult;
         }
       }
 
-      if (filters?.search) {
-        const searchLower = filters.search.toLowerCase();
-        result = result.filter(conv => 
-          conv.contact.name?.toLowerCase().includes(searchLower) ||
-          conv.contact.phone_number?.toLowerCase().includes(searchLower) ||
-          conv.last_message_preview?.toLowerCase().includes(searchLower)
-        );
-      }
+      const totalPages = Math.ceil((totalCount || 0) / pageSize);
 
-      return result;
+      return {
+        conversations: result,
+        totalCount: totalCount || 0,
+        totalPages,
+        unreadCount: unreadCount || 0,
+        waitingCount: 0,
+      } as ConversationsResult;
     },
   });
 
@@ -101,7 +180,11 @@ export const useWhatsAppConversations = (filters?: ConversationsFilters) => {
   }, [queryClient]);
 
   return {
-    conversations,
+    conversations: data?.conversations || [],
+    totalCount: data?.totalCount || 0,
+    totalPages: data?.totalPages || 0,
+    unreadCount: data?.unreadCount || 0,
+    waitingCount: data?.waitingCount || 0,
     isLoading,
     error,
   };
