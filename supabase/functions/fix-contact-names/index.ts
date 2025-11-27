@@ -42,12 +42,11 @@ Deno.serve(async (req) => {
 
     console.log('[fix-contact-names] Starting contact name correction process');
 
-    // 1. Find all contacts with incorrect names (containing "Diego Malta")
-    const { data: contactsToFix, error: fetchError } = await supabase
+    // 1. Find all contacts where name equals phone number (needs correction)
+    const { data: allContacts, error: fetchError } = await supabase
       .from('whatsapp_contacts')
-      .select('id, phone_number, name, instance_id')
-      .like('name', '%Diego Malta%');
-
+      .select('id, phone_number, name, instance_id');
+    
     if (fetchError) {
       console.error('[fix-contact-names] Error fetching contacts:', fetchError);
       return new Response(
@@ -56,7 +55,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (!contactsToFix || contactsToFix.length === 0) {
+    // Filter contacts where name = phone_number
+    const contactsToFix = allContacts?.filter(contact => 
+      contact.name === contact.phone_number
+    ) || [];
+    
+    if (contactsToFix.length === 0) {
       console.log('[fix-contact-names] No contacts to fix');
       return new Response(
         JSON.stringify({ 

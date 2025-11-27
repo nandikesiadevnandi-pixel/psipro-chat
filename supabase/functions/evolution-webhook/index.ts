@@ -140,40 +140,67 @@ async function downloadAndUploadMedia(
   }
 }
 
-// Find or create contact with name update on each message
+// Find or create contact - only update name if message is FROM contact
 async function findOrCreateContact(
   supabase: any,
   instanceId: string,
   phoneNumber: string,
   name: string,
-  isGroup: boolean
+  isGroup: boolean,
+  isFromMe: boolean
 ): Promise<string | null> {
   try {
-    // UPSERT: Create if doesn't exist, update name if it does (and name is not just phone number)
-    const shouldUpdateName = name !== phoneNumber;
-    
-    const { data: contact, error } = await supabase
+    // First check if contact exists
+    const { data: existingContact } = await supabase
       .from('whatsapp_contacts')
-      .upsert({
+      .select('id, name')
+      .eq('instance_id', instanceId)
+      .eq('phone_number', phoneNumber)
+      .maybeSingle();
+
+    if (existingContact) {
+      // Only update name if:
+      // 1. Message is NOT from me (avoid setting contact name to instance owner)
+      // 2. We have a real name (not just phone number)
+      // 3. Current name is the phone number
+      const shouldUpdateName = !isFromMe && 
+                               name !== phoneNumber && 
+                               existingContact.name === phoneNumber;
+      
+      if (shouldUpdateName) {
+        await supabase
+          .from('whatsapp_contacts')
+          .update({ 
+            name: name,
+            updated_at: new Date().toISOString() 
+          })
+          .eq('id', existingContact.id);
+        
+        console.log(`[evolution-webhook] Contact name updated: ${existingContact.id} -> ${name}`);
+      }
+      
+      return existingContact.id;
+    }
+
+    // Create new contact
+    const { data: newContact, error } = await supabase
+      .from('whatsapp_contacts')
+      .insert({
         instance_id: instanceId,
         phone_number: phoneNumber,
         name: name || phoneNumber,
         is_group: isGroup,
-        updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'instance_id,phone_number',
-        ignoreDuplicates: false, // Always update to get the latest name
       })
       .select('id')
       .single();
 
     if (error) {
-      console.error('[evolution-webhook] Error upserting contact:', error);
+      console.error('[evolution-webhook] Error creating contact:', error);
       return null;
     }
 
-    console.log('[evolution-webhook] Contact upserted:', contact.id, 'Name:', name);
-    return contact.id;
+    console.log(`[evolution-webhook] Contact created: ${newContact.id} Name: ${name}`);
+    return newContact.id;
   } catch (error) {
     console.error('[evolution-webhook] Error in findOrCreateContact:', error);
     return null;
@@ -358,8 +385,9 @@ async function processMessageUpsert(payload: EvolutionWebhookPayload, supabase: 
       supabase,
       instanceData.id,
       phone,
-      key.fromMe ? phone : (pushName || phone),
-      isGroup
+      pushName || phone,
+      isGroup,
+      key.fromMe
     );
 
     if (!contactId) {
