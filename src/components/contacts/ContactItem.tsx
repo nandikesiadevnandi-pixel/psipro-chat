@@ -1,6 +1,4 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import { ContactWithMetrics } from '@/hooks/whatsapp/useWhatsAppContacts';
 import { cn } from '@/lib/utils';
 
@@ -34,17 +32,9 @@ export function ContactItem({ contact, isSelected, onClick }: ContactItemProps) 
         </Avatar>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-1">
-            <h3 className="font-medium truncate text-sidebar-foreground">{contact.name}</h3>
-            {contact.last_interaction && (
-              <span className="ml-2 text-xs text-muted-foreground whitespace-nowrap">
-                {formatDistanceToNow(new Date(contact.last_interaction), {
-                  addSuffix: true,
-                  locale: ptBR,
-                })}
-              </span>
-            )}
-          </div>
+          <h3 className="font-medium truncate text-sidebar-foreground mb-1">
+            {contact.name}
+          </h3>
           
           <p className="text-sm text-muted-foreground truncate">
             {contact.phone_number}
