@@ -19,6 +19,7 @@ export { useWhatsAppContacts } from './useWhatsAppContacts';
 export { useContactDetails } from './useContactDetails';
 export { useConversationAssignment } from './useConversationAssignment';
 export { useAssignmentRules } from './useAssignmentRules';
+export type { AssignmentRule } from './useAssignmentRules';
 export type { SmartReplySuggestion, SmartReplyResponse } from './useSmartReply';
 export type { ContactSortOption, ContactWithMetrics, ContactsResult } from './useWhatsAppContacts';
 export type { ComposerAction } from './useWhatsAppComposer';
@@ -26,4 +27,3 @@ export type { WhatsAppMetrics, WhatsAppMetricsFilters } from './useWhatsAppMetri
 export type { ConversationSummary } from './useConversationSummaries';
 export type { ConversationNote } from './useConversationNotes';
 export type { ContactDetails } from './useContactDetails';
-export type { AssignmentRule } from './useAssignmentRules';

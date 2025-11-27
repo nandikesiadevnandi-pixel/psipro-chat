@@ -22,7 +22,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useWhatsAppInstances } from "@/hooks/whatsapp";
 import { useAgents } from "@/hooks/useAgents";
 import { AgentMultiSelect } from "./AgentMultiSelect";
-import { AssignmentRule } from "@/hooks/whatsapp/useAssignmentRules";
+import type { AssignmentRule } from "@/hooks/whatsapp/useAssignmentRules";
 
 interface AssignmentRuleDialogProps {
   open: boolean;
