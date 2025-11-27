@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Search, Users, MessageSquare, BarChart3, Settings } from 'lucide-react';
-import { useWhatsAppContacts } from '@/hooks/whatsapp/useWhatsAppContacts';
+import { useWhatsAppContacts, ContactSortOption } from '@/hooks/whatsapp/useWhatsAppContacts';
 import { useWhatsAppInstances } from '@/hooks/whatsapp';
 import { ContactItem } from './ContactItem';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -19,13 +19,15 @@ interface ContactsSidebarProps {
 export function ContactsSidebar({ selectedContactId, onSelectContact }: ContactsSidebarProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedInstanceId, setSelectedInstanceId] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<ContactSortOption>('last_interaction');
   
   const debouncedSearch = useDebounce(searchTerm, 300);
   
   const { instances } = useWhatsAppInstances();
   const { data: contacts, isLoading } = useWhatsAppContacts(
     selectedInstanceId === 'all' ? undefined : selectedInstanceId,
-    debouncedSearch
+    debouncedSearch,
+    sortBy
   );
 
   return (
@@ -81,6 +83,19 @@ export function ContactsSidebar({ selectedContactId, onSelectContact }: Contacts
                 {instance.name}
               </SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+
+        {/* Sort Filter */}
+        <Select value={sortBy} onValueChange={(value) => setSortBy(value as ContactSortOption)}>
+          <SelectTrigger className="mt-2">
+            <SelectValue placeholder="Ordenar por..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="last_interaction">Última interação</SelectItem>
+            <SelectItem value="name_asc">Nome (A-Z)</SelectItem>
+            <SelectItem value="name_desc">Nome (Z-A)</SelectItem>
+            <SelectItem value="conversations">Mais conversas</SelectItem>
           </SelectContent>
         </Select>
       </div>
