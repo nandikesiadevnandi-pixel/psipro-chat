@@ -10,6 +10,7 @@ import ConversationItem from "./ConversationItem";
 import QuickFilterPills from "./QuickFilterPills";
 import NewConversationModal from "./NewConversationModal";
 import { ConversationFiltersPopover } from "./ConversationFiltersPopover";
+import { NotificationToggle } from "@/components/notifications/NotificationToggle";
 import { Link } from "react-router-dom";
 
 interface ConversationsSidebarProps {
@@ -126,6 +127,8 @@ const ConversationsSidebar = ({ selectedId, onSelect, instanceId, isCollapsed, o
         </Button>
         
         {/* Quick links */}
+        <NotificationToggle />
+        
         <Link to="/whatsapp/contatos">
           <Button variant="ghost" size="icon" title="Contatos">
             <Users className="h-4 w-4" />
@@ -172,6 +175,7 @@ const ConversationsSidebar = ({ selectedId, onSelect, instanceId, isCollapsed, o
       <div className="p-3 border-b border-sidebar-border flex items-center justify-between">
         <h1 className="text-lg font-semibold">Conversas</h1>
         <div className="flex items-center gap-1">
+          <NotificationToggle />
           <Link to="/whatsapp/contatos">
             <Button variant="ghost" size="icon" title="Contatos">
               <Users className="h-5 w-5" />

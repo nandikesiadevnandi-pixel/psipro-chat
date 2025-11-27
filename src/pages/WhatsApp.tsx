@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ConversationsSidebar } from "@/components/conversations";
 import { ChatArea, ConversationDetailsSidebar } from "@/components/chat";
 import { useWhatsAppInstances, useWhatsAppConversations } from "@/hooks/whatsapp";
+import { useNotifications } from "@/hooks/useNotifications";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Settings, ArrowLeft } from "lucide-react";
@@ -9,6 +10,7 @@ import { Link } from "react-router-dom";
 
 const WhatsApp = () => {
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
+  const { setSelectedConversationId } = useNotifications();
   const [isDetailsSidebarCollapsed, setIsDetailsSidebarCollapsed] = useState(false);
   const [isConversationsSidebarCollapsed, setIsConversationsSidebarCollapsed] = useState(false);
   const { instances } = useWhatsAppInstances();
@@ -20,6 +22,12 @@ const WhatsApp = () => {
   // Fetch conversations to get contact name
   const { conversations } = useWhatsAppConversations({ instanceId });
   const selectedConv = conversations.find(c => c.id === selectedConversation);
+
+  // Inform NotificationContext about open conversation
+  useEffect(() => {
+    setSelectedConversationId(selectedConversation);
+    return () => setSelectedConversationId(null);
+  }, [selectedConversation, setSelectedConversationId]);
 
   const handleSelectConversation = (id: string | null) => {
     setSelectedConversation(id);
