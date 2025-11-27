@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+export type ContactSortOption = 'last_interaction' | 'name_asc' | 'name_desc' | 'conversations';
+
 export interface ContactWithMetrics {
   id: string;
   name: string;
@@ -13,9 +15,13 @@ export interface ContactWithMetrics {
   last_interaction: string | null;
 }
 
-export const useWhatsAppContacts = (instanceId?: string, searchTerm?: string) => {
+export const useWhatsAppContacts = (
+  instanceId?: string, 
+  searchTerm?: string,
+  sortBy: ContactSortOption = 'last_interaction'
+) => {
   return useQuery({
-    queryKey: ['whatsapp-contacts', instanceId, searchTerm],
+    queryKey: ['whatsapp-contacts', instanceId, searchTerm, sortBy],
     queryFn: async (): Promise<ContactWithMetrics[]> => {
       let query = supabase
         .from('whatsapp_contacts')
@@ -89,11 +95,21 @@ export const useWhatsAppContacts = (instanceId?: string, searchTerm?: string) =>
         })
       );
 
-      // Ordenar por última interação (mais recente primeiro)
+      // Ordenar baseado no parâmetro sortBy
       return contactsWithMetrics.sort((a, b) => {
-        if (!a.last_interaction) return 1;
-        if (!b.last_interaction) return -1;
-        return new Date(b.last_interaction).getTime() - new Date(a.last_interaction).getTime();
+        switch (sortBy) {
+          case 'name_asc':
+            return a.name.localeCompare(b.name, 'pt-BR');
+          case 'name_desc':
+            return b.name.localeCompare(a.name, 'pt-BR');
+          case 'conversations':
+            return b.total_conversations - a.total_conversations;
+          case 'last_interaction':
+          default:
+            if (!a.last_interaction) return 1;
+            if (!b.last_interaction) return -1;
+            return new Date(b.last_interaction).getTime() - new Date(a.last_interaction).getTime();
+        }
       });
     },
     staleTime: 30000,

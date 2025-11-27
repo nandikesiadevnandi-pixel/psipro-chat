@@ -17,6 +17,7 @@ export { useWhatsAppActions } from './useWhatsAppActions';
 export { useWhatsAppContacts } from './useWhatsAppContacts';
 export { useContactDetails } from './useContactDetails';
 export type { SmartReplySuggestion, SmartReplyResponse } from './useSmartReply';
+export type { ContactSortOption } from './useWhatsAppContacts';
 export type { ComposerAction } from './useWhatsAppComposer';
 export type { WhatsAppMetrics, WhatsAppMetricsFilters } from './useWhatsAppMetrics';
 export type { ConversationSummary } from './useConversationSummaries';
