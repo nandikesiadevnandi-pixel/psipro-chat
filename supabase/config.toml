@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.generate-conversation-summary]
 verify_jwt = false
+
+[functions.categorize-whatsapp-conversation]
+verify_jwt = false

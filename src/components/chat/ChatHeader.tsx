@@ -4,6 +4,8 @@ import { RefreshCw, Settings } from "lucide-react";
 import { SentimentCard } from "./SentimentCard";
 import { Tables } from "@/integrations/supabase/types";
 import { Link } from "react-router-dom";
+import { useConversationTopics } from "@/hooks/whatsapp/useConversationTopics";
+import { TopicBadges } from "./topics/TopicBadges";
 
 type Contact = Tables<'whatsapp_contacts'>;
 type Sentiment = Tables<'whatsapp_sentiment_analysis'>;
@@ -13,9 +15,12 @@ interface ChatHeaderProps {
   sentiment?: Sentiment | null;
   isAnalyzing: boolean;
   onAnalyze: () => void;
+  conversationId?: string;
 }
 
-export const ChatHeader = ({ contact, sentiment, isAnalyzing, onAnalyze }: ChatHeaderProps) => {
+export const ChatHeader = ({ contact, sentiment, isAnalyzing, onAnalyze, conversationId }: ChatHeaderProps) => {
+  const { data: topicsData } = useConversationTopics(conversationId || null);
+  
   if (!contact) return null;
 
   const getInitials = (name: string) => {
@@ -38,13 +43,18 @@ export const ChatHeader = ({ contact, sentiment, isAnalyzing, onAnalyze }: ChatH
             </AvatarFallback>
           </Avatar>
           
-          <div>
+          <div className="flex-1">
             <h2 className="text-base font-semibold text-foreground">
               {contact.name}
             </h2>
             <p className="text-xs text-muted-foreground">
               {contact.phone_number}
             </p>
+            {topicsData?.topics && topicsData.topics.length > 0 && (
+              <div className="mt-1">
+                <TopicBadges topics={topicsData.topics} size="sm" showIcon={true} maxTopics={3} />
+              </div>
+            )}
           </div>
         </div>
 

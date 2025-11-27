@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import { ResponseStatusIndicator } from "./ResponseStatusIndicator";
+import { TopicBadges } from "@/components/chat/topics/TopicBadges";
 
 type Conversation = Tables<"whatsapp_conversations"> & {
   contact?: Tables<"whatsapp_contacts"> | null;
@@ -74,6 +75,9 @@ const ConversationItem = ({
   // Get sentiment from metadata if available
   const sentiment = (conversation.metadata as any)?.sentiment || null;
   const sentimentEmoji = getSentimentEmoji(sentiment);
+  
+  // Get topics from metadata
+  const topics = (conversation.metadata as any)?.topics || [];
 
   return (
     <div
@@ -134,6 +138,13 @@ const ConversationItem = ({
             )}
           </div>
         </div>
+
+        {/* Topics row */}
+        {topics.length > 0 && (
+          <div className="mt-1.5">
+            <TopicBadges topics={topics} size="sm" maxTopics={2} />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -14,6 +14,7 @@ export interface WhatsAppMetrics {
   avgResponseTimeMinutes: number;
   dailyTrend: { date: string; count: number }[];
   statusDistribution: { status: string; count: number; percentage: number }[];
+  topicsDistribution: { topic: string; count: number }[];
   longestConversations: Array<{
     id: string;
     contactName: string;
@@ -32,7 +33,7 @@ export const useWhatsAppMetrics = (filters: WhatsAppMetricsFilters) => {
       // Fetch conversations with filters
       const { data: conversations, error: convError } = await supabase
         .from('whatsapp_conversations')
-        .select('id, status, last_message_at, created_at, contact_id')
+        .select('id, status, last_message_at, created_at, contact_id, metadata')
         .gte('last_message_at', from.toISOString())
         .lte('last_message_at', to.toISOString());
 
@@ -114,6 +115,22 @@ export const useWhatsAppMetrics = (filters: WhatsAppMetricsFilters) => {
         { status: 'archived', count: archived, percentage: total > 0 ? (archived / total) * 100 : 0 },
       ];
 
+      // Calculate topics distribution
+      const topicCounts: Record<string, number> = {};
+      conversations?.forEach((conv: any) => {
+        const metadata = conv.metadata as any;
+        if (metadata?.topics && Array.isArray(metadata.topics)) {
+          metadata.topics.forEach((topic: string) => {
+            topicCounts[topic] = (topicCounts[topic] || 0) + 1;
+          });
+        }
+      });
+
+      const topicsDistribution = Object.entries(topicCounts).map(([topic, count]) => ({
+        topic,
+        count
+      }));
+
       // Fetch longest conversations
       const { data: longestConvs, error: longestError } = await supabase
         .from('whatsapp_conversations')
@@ -159,6 +176,7 @@ export const useWhatsAppMetrics = (filters: WhatsAppMetricsFilters) => {
         avgResponseTimeMinutes,
         dailyTrend,
         statusDistribution,
+        topicsDistribution,
         longestConversations
       } as WhatsAppMetrics;
     },

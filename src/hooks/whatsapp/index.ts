@@ -11,6 +11,8 @@ export { useWhatsAppComposer } from './useWhatsAppComposer';
 export { useWhatsAppMetrics } from './useWhatsAppMetrics';
 export { useConversationSummaries } from './useConversationSummaries';
 export { useConversationNotes } from './useConversationNotes';
+export { useConversationTopics } from './useConversationTopics';
+export { useCategorizeConversation } from './useCategorizeConversation';
 export type { SmartReplySuggestion, SmartReplyResponse } from './useSmartReply';
 export type { ComposerAction } from './useWhatsAppComposer';
 export type { WhatsAppMetrics, WhatsAppMetricsFilters } from './useWhatsAppMetrics';
