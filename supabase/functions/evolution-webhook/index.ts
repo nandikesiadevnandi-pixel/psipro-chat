@@ -5,6 +5,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Auto sentiment analysis threshold (number of client messages to trigger analysis)
+const AUTO_SENTIMENT_THRESHOLD = 5;
+
 interface EvolutionWebhookPayload {
   event: string;
   instance: string;
@@ -233,6 +236,55 @@ async function findOrCreateConversation(
   }
 }
 
+// Check and trigger automatic sentiment analysis
+async function checkAndTriggerAutoSentiment(
+  supabase: any,
+  conversationId: string,
+  supabaseUrl: string
+) {
+  try {
+    // 1. Buscar última análise de sentimento
+    const { data: lastAnalysis } = await supabase
+      .from('whatsapp_sentiment_analysis')
+      .select('created_at')
+      .eq('conversation_id', conversationId)
+      .maybeSingle();
+
+    // 2. Contar mensagens do cliente desde última análise
+    let query = supabase
+      .from('whatsapp_messages')
+      .select('id', { count: 'exact', head: true })
+      .eq('conversation_id', conversationId)
+      .eq('is_from_me', false);
+
+    // Se há análise anterior, contar apenas mensagens mais recentes
+    if (lastAnalysis?.created_at) {
+      query = query.gt('timestamp', lastAnalysis.created_at);
+    }
+
+    const { count } = await query;
+
+    console.log(`[auto-sentiment] Messages since last analysis: ${count}`);
+
+    // 3. Se atingiu threshold, disparar análise (async, não bloqueia)
+    if (count && count >= AUTO_SENTIMENT_THRESHOLD) {
+      console.log(`[auto-sentiment] Triggering auto analysis for ${conversationId}`);
+      
+      // Chamar edge function de análise de sentimento (fire and forget)
+      fetch(`${supabaseUrl}/functions/v1/analyze-whatsapp-sentiment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
+        },
+        body: JSON.stringify({ conversationId }),
+      }).catch(err => console.error('[auto-sentiment] Error triggering:', err));
+    }
+  } catch (error) {
+    console.error('[auto-sentiment] Error checking sentiment:', error);
+  }
+}
+
 // Process message upsert event
 async function processMessageUpsert(payload: EvolutionWebhookPayload, supabase: any) {
   try {
@@ -365,6 +417,12 @@ async function processMessageUpsert(payload: EvolutionWebhookPayload, supabase: 
       console.error('[evolution-webhook] Error updating conversation:', updateError);
     } else {
       console.log('[evolution-webhook] Conversation updated successfully');
+    }
+
+    // Se mensagem é do cliente (não é minha), verificar análise automática
+    if (!key.fromMe) {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      checkAndTriggerAutoSentiment(supabase, conversationId, supabaseUrl);
     }
   } catch (error) {
     console.error('[evolution-webhook] Error in processMessageUpsert:', error);
