@@ -14,6 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
+      conversation_assignments: {
+        Row: {
+          assigned_by: string | null
+          assigned_from: string | null
+          assigned_to: string
+          conversation_id: string
+          created_at: string | null
+          id: string
+          reason: string | null
+        }
+        Insert: {
+          assigned_by?: string | null
+          assigned_from?: string | null
+          assigned_to: string
+          conversation_id: string
+          created_at?: string | null
+          id?: string
+          reason?: string | null
+        }
+        Update: {
+          assigned_by?: string | null
+          assigned_from?: string | null
+          assigned_to?: string
+          conversation_id?: string
+          created_at?: string | null
+          id?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_assignments_assigned_from_fkey"
+            columns: ["assigned_from"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_assignments_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_assignments_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -193,6 +252,7 @@ export type Database = {
       }
       whatsapp_conversations: {
         Row: {
+          assigned_to: string | null
           contact_id: string
           created_at: string
           id: string
@@ -205,6 +265,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assigned_to?: string | null
           contact_id: string
           created_at?: string
           id?: string
@@ -217,6 +278,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assigned_to?: string | null
           contact_id?: string
           created_at?: string
           id?: string
@@ -229,6 +291,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "whatsapp_conversations_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "whatsapp_conversations_contact_id_fkey"
             columns: ["contact_id"]

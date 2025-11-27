@@ -6,3 +6,5 @@ export { InstanceFilter } from "./InstanceFilter";
 export { ConversationFiltersPopover } from "./ConversationFiltersPopover";
 export { ResponseStatusIndicator } from "./ResponseStatusIndicator";
 export { ConversationItemMenu } from "./ConversationItemMenu";
+export { AssignAgentDialog } from "./AssignAgentDialog";
+export { QueueIndicator } from "./QueueIndicator";

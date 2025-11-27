@@ -17,6 +17,7 @@ export { useCategorizeConversation } from './useCategorizeConversation';
 export { useWhatsAppActions } from './useWhatsAppActions';
 export { useWhatsAppContacts } from './useWhatsAppContacts';
 export { useContactDetails } from './useContactDetails';
+export { useConversationAssignment } from './useConversationAssignment';
 export type { SmartReplySuggestion, SmartReplyResponse } from './useSmartReply';
 export type { ContactSortOption, ContactWithMetrics, ContactsResult } from './useWhatsAppContacts';
 export type { ComposerAction } from './useWhatsAppComposer';

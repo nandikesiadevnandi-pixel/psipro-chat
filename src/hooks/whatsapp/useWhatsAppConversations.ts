@@ -15,6 +15,8 @@ interface ConversationsFilters {
   instanceId?: string;
   search?: string;
   status?: string;
+  assignedTo?: string;
+  unassigned?: boolean;
   page?: number;
   pageSize?: number;
 }
@@ -42,7 +44,8 @@ export const useWhatsAppConversations = (filters?: ConversationsFilters) => {
         .from('whatsapp_conversations')
         .select(`
           *,
-          contact:whatsapp_contacts(*)
+          contact:whatsapp_contacts(*),
+          assigned_profile:profiles(id, full_name, avatar_url)
         `)
         .order('last_message_at', { ascending: false, nullsFirst: false })
         .range(from, to);
@@ -53,6 +56,14 @@ export const useWhatsAppConversations = (filters?: ConversationsFilters) => {
 
       if (filters?.status) {
         query = query.eq('status', filters.status);
+      }
+
+      if (filters?.assignedTo) {
+        query = query.eq('assigned_to', filters.assignedTo);
+      }
+
+      if (filters?.unassigned) {
+        query = query.is('assigned_to', null);
       }
 
       const { data: conversationsData, error } = await query;
@@ -74,6 +85,14 @@ export const useWhatsAppConversations = (filters?: ConversationsFilters) => {
         countQuery = countQuery.eq('status', filters.status);
       }
 
+      if (filters?.assignedTo) {
+        countQuery = countQuery.eq('assigned_to', filters.assignedTo);
+      }
+
+      if (filters?.unassigned) {
+        countQuery = countQuery.is('assigned_to', null);
+      }
+
       const { count: totalCount } = await countQuery;
 
       // Query 3: Get unread count (all conversations)
@@ -88,6 +107,14 @@ export const useWhatsAppConversations = (filters?: ConversationsFilters) => {
 
       if (filters?.status) {
         unreadQuery = unreadQuery.eq('status', filters.status);
+      }
+
+      if (filters?.assignedTo) {
+        unreadQuery = unreadQuery.eq('assigned_to', filters.assignedTo);
+      }
+
+      if (filters?.unassigned) {
+        unreadQuery = unreadQuery.is('assigned_to', null);
       }
 
       const { count: unreadCount } = await unreadQuery;
@@ -106,6 +133,14 @@ export const useWhatsAppConversations = (filters?: ConversationsFilters) => {
 
       if (filters?.status) {
         allConversationsQuery = allConversationsQuery.eq('status', filters.status);
+      }
+
+      if (filters?.assignedTo) {
+        allConversationsQuery = allConversationsQuery.eq('assigned_to', filters.assignedTo);
+      }
+
+      if (filters?.unassigned) {
+        allConversationsQuery = allConversationsQuery.is('assigned_to', null);
       }
 
       const { data: allConversations } = await allConversationsQuery;

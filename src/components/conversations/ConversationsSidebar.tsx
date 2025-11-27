@@ -13,6 +13,7 @@ import { ConversationFiltersPopover } from "./ConversationFiltersPopover";
 import { NotificationToggle } from "@/components/notifications/NotificationToggle";
 import { UserMenu } from "@/components/auth/UserMenu";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ConversationsSidebarProps {
   selectedId: string | null;
@@ -22,7 +23,7 @@ interface ConversationsSidebarProps {
   onToggleCollapse?: () => void;
 }
 
-type FilterType = "all" | "unread" | "waiting";
+type FilterType = "all" | "unread" | "waiting" | "queue" | "mine";
 
 const ConversationsSidebar = ({ selectedId, onSelect, instanceId, isCollapsed, onToggleCollapse }: ConversationsSidebarProps) => {
   const [search, setSearch] = useState("");
@@ -33,17 +34,32 @@ const ConversationsSidebar = ({ selectedId, onSelect, instanceId, isCollapsed, o
   const [isNewConversationOpen, setIsNewConversationOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 20;
+  const { user } = useAuth();
 
   // Debounce search for advanced message search
   const debouncedSearchQuery = useDebounce(search, 300);
   const { data: messageSearchResults, isLoading: isSearchingMessages } = useWhatsAppMessageSearch(debouncedSearchQuery);
 
-  const { conversations, totalCount, totalPages, unreadCount, waitingCount, isLoading } = useWhatsAppConversations({
+  // Build filters for conversations query
+  const conversationFilters = {
     instanceId: instanceFilter || instanceId,
     status: statusFilter === "all" ? undefined : statusFilter,
     page: currentPage,
     pageSize,
-  });
+    assignedTo: filter === "mine" ? user?.id : undefined,
+    unassigned: filter === "queue" ? true : undefined,
+  };
+
+  const { conversations, totalCount, totalPages, unreadCount, waitingCount, isLoading } = useWhatsAppConversations(conversationFilters);
+
+  // Get counts for queue and my conversations
+  const queueCount = useMemo(() => {
+    return conversations.filter(c => !c.assigned_to).length;
+  }, [conversations]);
+
+  const myConversationsCount = useMemo(() => {
+    return conversations.filter(c => c.assigned_to === user?.id).length;
+  }, [conversations, user]);
 
   // Reset page when filters change
   useEffect(() => {
@@ -77,6 +93,10 @@ const ConversationsSidebar = ({ selectedId, onSelect, instanceId, isCollapsed, o
       result = result.filter(conv => (conv.unread_count || 0) > 0);
     } else if (filter === "waiting") {
       result = result.filter(conv => conv.isLastMessageFromMe === false);
+    } else if (filter === "queue") {
+      result = result.filter(conv => !conv.assigned_to);
+    } else if (filter === "mine") {
+      result = result.filter(conv => conv.assigned_to === user?.id);
     }
 
     // Ordenação
@@ -236,6 +256,8 @@ const ConversationsSidebar = ({ selectedId, onSelect, instanceId, isCollapsed, o
             onFilterChange={setFilter}
             unreadCount={unreadCount}
             waitingCount={waitingCount}
+            queueCount={queueCount}
+            myConversationsCount={myConversationsCount}
           />
           <ConversationFiltersPopover
             statusFilter={statusFilter}

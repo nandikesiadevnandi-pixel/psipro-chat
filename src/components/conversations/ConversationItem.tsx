@@ -7,10 +7,16 @@ import { Tables } from "@/integrations/supabase/types";
 import { ResponseStatusIndicator } from "./ResponseStatusIndicator";
 import { TopicBadges } from "@/components/chat/topics/TopicBadges";
 import { ConversationItemMenu } from "./ConversationItemMenu";
+import { QueueIndicator } from "./QueueIndicator";
 
 type Conversation = Tables<"whatsapp_conversations"> & {
   contact?: Tables<"whatsapp_contacts"> | null;
   isLastMessageFromMe?: boolean;
+  assigned_profile?: {
+    id: string;
+    full_name: string;
+    avatar_url: string | null;
+  } | null;
 };
 
 interface ConversationItemProps {
@@ -147,6 +153,15 @@ const ConversationItem = ({
               <TopicBadges topics={topics} size="sm" maxTopics={2} />
             </div>
           )}
+
+          {/* Assignment status row */}
+          <div className="mt-1.5">
+            <QueueIndicator
+              assignedTo={conversation.assigned_to}
+              assignedToName={conversation.assigned_profile?.full_name}
+              size="sm"
+            />
+          </div>
         </div>
       </div>
     </ConversationItemMenu>
