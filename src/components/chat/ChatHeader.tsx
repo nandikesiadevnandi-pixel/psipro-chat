@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Settings, UserPlus, Repeat } from "lucide-react";
+import { RefreshCw, Settings, UserPlus, Repeat, Pencil } from "lucide-react";
 import { SentimentCard } from "./SentimentCard";
 import { Tables } from "@/integrations/supabase/types";
 import { Link } from "react-router-dom";
@@ -9,9 +9,12 @@ import { TopicBadges } from "./topics/TopicBadges";
 import { ChatHeaderMenu } from "./ChatHeaderMenu";
 import { QueueIndicator } from "@/components/conversations/QueueIndicator";
 import { AssignAgentDialog } from "@/components/conversations/AssignAgentDialog";
+import { EditContactModal } from "./EditContactModal";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useConversationAssignment } from "@/hooks/whatsapp/useConversationAssignment";
+import { isContactNameMissing } from "@/utils/contactUtils";
+import { cn } from "@/lib/utils";
 
 type Contact = Tables<'whatsapp_contacts'>;
 type Sentiment = Tables<'whatsapp_sentiment_analysis'>;
@@ -29,10 +32,14 @@ interface ChatHeaderProps {
 export const ChatHeader = ({ contact, sentiment, isAnalyzing, onAnalyze, conversationId, conversation, onRefresh }: ChatHeaderProps) => {
   const { data: topicsData } = useConversationTopics(conversationId || null);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [isEditContactModalOpen, setIsEditContactModalOpen] = useState(false);
   const { user, isAdmin, isSupervisor } = useAuth();
   const { assignConversation } = useConversationAssignment();
   
   if (!contact) return null;
+  
+  const nameIsMissing = isContactNameMissing(contact.name, contact.phone_number);
+  const displayName = nameIsMissing ? 'Sem nome' : contact.name;
 
   const isInQueue = !conversation?.assigned_to;
   const canAssign = isAdmin || isSupervisor;
@@ -66,9 +73,24 @@ export const ChatHeader = ({ contact, sentiment, isAnalyzing, onAnalyze, convers
           </Avatar>
           
           <div className="flex-1">
-            <h2 className="text-base font-semibold text-foreground">
-              {contact.name}
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className={cn(
+                "text-base font-semibold",
+                nameIsMissing ? "text-muted-foreground italic" : "text-foreground"
+              )}>
+                {displayName}
+              </h2>
+              {nameIsMissing && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-6 w-6 p-0" 
+                  onClick={() => setIsEditContactModalOpen(true)}
+                >
+                  <Pencil className="h-3 w-3 text-muted-foreground" />
+                </Button>
+              )}
+            </div>
             <p className="text-xs text-muted-foreground">
               {contact.phone_number}
             </p>
@@ -146,6 +168,20 @@ export const ChatHeader = ({ contact, sentiment, isAnalyzing, onAnalyze, convers
           isTransfer={!isInQueue}
         />
       )}
+      
+      {/* Edit Contact Modal */}
+      <EditContactModal
+        open={isEditContactModalOpen}
+        onOpenChange={setIsEditContactModalOpen}
+        contactId={contact.id}
+        contactName={contact.name}
+        contactPhone={contact.phone_number}
+        contactNotes={contact.notes || ''}
+        onSuccess={() => {
+          setIsEditContactModalOpen(false);
+          if (onRefresh) onRefresh();
+        }}
+      />
     </div>
   );
 };

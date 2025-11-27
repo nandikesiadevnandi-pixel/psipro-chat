@@ -2,12 +2,17 @@ import { format, isToday, isYesterday, isThisWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, Pencil } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import { ResponseStatusIndicator } from "./ResponseStatusIndicator";
 import { TopicBadges } from "@/components/chat/topics/TopicBadges";
 import { ConversationItemMenu } from "./ConversationItemMenu";
 import { QueueIndicator } from "./QueueIndicator";
+import { EditContactModal } from "@/components/chat/EditContactModal";
+import { isContactNameMissing } from "@/utils/contactUtils";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 type Conversation = Tables<"whatsapp_conversations"> & {
   contact?: Tables<"whatsapp_contacts"> | null;
@@ -73,11 +78,20 @@ const ConversationItem = ({
   onClick, 
   foundByContent = false 
 }: ConversationItemProps) => {
-  const contactName = conversation.contact?.name || "Desconhecido";
+  const contact = conversation.contact;
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  
+  const nameIsMissing = contact ? isContactNameMissing(contact.name, contact.phone_number) : false;
+  const contactName = nameIsMissing ? "Sem nome" : (contact?.name || "Desconhecido");
   const profilePicture = conversation.contact?.profile_picture_url;
   const lastMessage = conversation.last_message_preview || "";
   const lastMessageTime = conversation.last_message_at;
   const unreadCount = conversation.unread_count || 0;
+  
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsEditModalOpen(true);
+  };
   
   // Get sentiment from metadata if available
   const sentiment = (conversation.metadata as any)?.sentiment || null;
@@ -113,9 +127,22 @@ const ConversationItem = ({
           {/* Name and timestamp row */}
           <div className="flex items-center justify-between gap-2 mb-1">
             <div className="flex items-center gap-1.5 min-w-0 flex-1">
-              <span className="font-medium text-sm text-sidebar-foreground truncate">
+              <span className={cn(
+                "font-medium text-sm truncate",
+                nameIsMissing && "text-muted-foreground italic"
+              )}>
                 {contactName}
               </span>
+              {nameIsMissing && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-5 w-5 p-0 flex-shrink-0" 
+                  onClick={handleEditClick}
+                >
+                  <Pencil className="h-3 w-3 text-muted-foreground" />
+                </Button>
+              )}
               {sentimentEmoji && (
                 <span className="text-sm shrink-0">{sentimentEmoji}</span>
               )}
@@ -173,6 +200,21 @@ const ConversationItem = ({
           </div>
         </div>
       </div>
+      
+      {/* Edit Contact Modal */}
+      {contact && (
+        <EditContactModal
+          open={isEditModalOpen}
+          onOpenChange={setIsEditModalOpen}
+          contactId={contact.id}
+          contactName={contact.name}
+          contactPhone={contact.phone_number}
+          contactNotes={contact.notes || ''}
+          onSuccess={() => {
+            setIsEditModalOpen(false);
+          }}
+        />
+      )}
     </ConversationItemMenu>
   );
 };
