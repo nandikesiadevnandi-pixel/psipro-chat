@@ -52,6 +52,20 @@ export const MessageBubble = ({ message }: MessageBubbleProps) => {
           </div>
         );
       
+      case 'sticker':
+        return (
+          <div>
+            {message.media_url && (
+              <img
+                src={message.media_url}
+                alt="Sticker"
+                className="max-w-[150px] cursor-pointer hover:scale-105 transition-transform"
+                onClick={() => setViewerImage(message.media_url)}
+              />
+            )}
+          </div>
+        );
+      
       case 'audio':
         return (
           <div className="space-y-2">
@@ -110,6 +124,7 @@ export const MessageBubble = ({ message }: MessageBubbleProps) => {
       <Card
         className={cn(
           'max-w-[70%] p-3 space-y-1',
+          message.message_type === 'sticker' && 'bg-transparent border-none shadow-none p-0',
           isFromMe
             ? 'bg-primary text-primary-foreground'
             : 'bg-card text-card-foreground'
