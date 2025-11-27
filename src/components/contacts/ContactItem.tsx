@@ -24,20 +24,20 @@ export function ContactItem({ contact, isSelected, onClick }: ContactItemProps) 
     <div
       onClick={onClick}
       className={cn(
-        "p-3 rounded-lg cursor-pointer transition-colors mb-1",
-        "hover:bg-accent",
-        isSelected && "bg-accent"
+        "p-3 cursor-pointer transition-colors",
+        "hover:bg-sidebar-accent",
+        isSelected && "bg-sidebar-accent"
       )}
     >
       <div className="flex items-center gap-3">
-        <Avatar className="h-12 w-12">
+        <Avatar className="h-10 w-10">
           <AvatarImage src={contact.profile_picture_url || undefined} />
-          <AvatarFallback>{initials}</AvatarFallback>
+          <AvatarFallback className="bg-primary/10 text-primary">{initials}</AvatarFallback>
         </Avatar>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
-            <h3 className="font-medium truncate">{contact.name}</h3>
+            <h3 className="font-medium truncate text-sidebar-foreground">{contact.name}</h3>
             <Badge variant="secondary" className="ml-2 text-xs">
               <MessageSquare className="h-3 w-3 mr-1" />
               {contact.total_conversations}
