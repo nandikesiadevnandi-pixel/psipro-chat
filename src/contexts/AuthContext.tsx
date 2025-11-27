@@ -42,6 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Load profile and role for a user
   const loadUserData = async (userId: string) => {
+    console.log('🔍 [AuthContext] Loading user data for:', userId);
     try {
       // Load profile
       const { data: profileData, error: profileError } = await supabase
@@ -51,9 +52,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle();
 
       if (profileError) {
-        console.error('Error loading profile:', profileError);
+        console.error('❌ [AuthContext] Error loading profile:', profileError);
       } else if (profileData) {
+        console.log('✅ [AuthContext] Profile loaded:', profileData);
         setProfile(profileData as Profile);
+      } else {
+        console.warn('⚠️ [AuthContext] No profile found for user:', userId);
       }
 
       // Load role
@@ -64,12 +68,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle();
 
       if (roleError) {
-        console.error('Error loading role:', roleError);
+        console.error('❌ [AuthContext] Error loading role:', roleError);
       } else if (roleData) {
+        console.log('✅ [AuthContext] Role loaded:', roleData.role);
         setRole(roleData.role as AppRole);
+      } else {
+        console.warn('⚠️ [AuthContext] No role found for user:', userId);
       }
     } catch (error) {
-      console.error('Error in loadUserData:', error);
+      console.error('❌ [AuthContext] Error in loadUserData:', error);
     }
   };
 
@@ -165,6 +172,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     navigate('/auth');
   };
 
+  const isAdmin = role === 'admin';
+  const isSupervisor = role === 'supervisor';
+  const isAgent = role === 'agent';
+
+  console.log('🔐 [AuthContext] Current auth state:', { 
+    userId: user?.id, 
+    role, 
+    isAdmin, 
+    isSupervisor, 
+    isAgent,
+    profileEmail: profile?.id
+  });
+
   const value: AuthContextType = {
     user,
     session,
@@ -174,9 +194,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signIn,
     signUp,
     signOut,
-    isAdmin: role === 'admin',
-    isSupervisor: role === 'supervisor',
-    isAgent: role === 'agent',
+    isAdmin,
+    isSupervisor,
+    isAgent,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
