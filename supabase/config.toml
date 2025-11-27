@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.categorize-whatsapp-conversation]
 verify_jwt = false
+
+[functions.fix-contact-names]
+verify_jwt = false
