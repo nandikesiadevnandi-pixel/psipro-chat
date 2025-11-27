@@ -6,6 +6,7 @@ import { DateRangeFilter } from '@/components/reports/DateRangeFilter';
 import { StatusDistributionChart } from '@/components/reports/StatusDistributionChart';
 import { LongestConversationsTable } from '@/components/reports/LongestConversationsTable';
 import { ReportToolbar } from '@/components/reports/ReportToolbar';
+import { TopicsDistributionChart } from '@/components/chat/topics/TopicsDistributionChart';
 import { useWhatsAppMetrics } from '@/hooks/whatsapp/useWhatsAppMetrics';
 import { formatDuration } from '@/utils/timeFormatters';
 import { subDays, startOfDay, endOfDay, format } from 'date-fns';
@@ -167,6 +168,9 @@ export default function WhatsAppRelatorio() {
 
               {/* Status Distribution Chart */}
               <StatusDistributionChart data={metrics?.statusDistribution || []} />
+
+              {/* Topics Distribution Chart */}
+              <TopicsDistributionChart data={metrics?.topicsDistribution || []} />
             </div>
 
             {/* Longest Conversations Table */}

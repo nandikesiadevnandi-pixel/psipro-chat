@@ -78,6 +78,7 @@ export const ChatArea = ({ conversationId }: ChatAreaProps) => {
         sentiment={sentiment}
         isAnalyzing={isAnalyzing}
         onAnalyze={analyze}
+        conversationId={conversationId}
       />
       
       <MessagesContainer messages={messages} isLoading={messagesLoading} />
