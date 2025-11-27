@@ -183,12 +183,15 @@ async function findOrCreateContact(
     }
 
     // Create new contact
+    // If message is from me, use phone number as name (to avoid using instance owner's name)
+    const contactName = isFromMe ? phoneNumber : (name || phoneNumber);
+    
     const { data: newContact, error } = await supabase
       .from('whatsapp_contacts')
       .insert({
         instance_id: instanceId,
         phone_number: phoneNumber,
-        name: name || phoneNumber,
+        name: contactName,
         is_group: isGroup,
       })
       .select('id')

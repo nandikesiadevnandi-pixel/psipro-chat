@@ -1,6 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ContactWithMetrics } from '@/hooks/whatsapp/useWhatsAppContacts';
 import { cn } from '@/lib/utils';
+import { isContactNameMissing } from '@/utils/contactUtils';
 
 interface ContactItemProps {
   contact: ContactWithMetrics;
@@ -9,6 +10,9 @@ interface ContactItemProps {
 }
 
 export function ContactItem({ contact, isSelected, onClick }: ContactItemProps) {
+  const nameIsMissing = isContactNameMissing(contact.name, contact.phone_number);
+  const displayName = nameIsMissing ? 'Sem nome' : contact.name;
+  
   const initials = contact.name
     .split(' ')
     .map(n => n[0])
@@ -32,8 +36,11 @@ export function ContactItem({ contact, isSelected, onClick }: ContactItemProps) 
         </Avatar>
 
         <div className="flex-1 min-w-0">
-          <h3 className="font-medium truncate text-sidebar-foreground mb-1">
-            {contact.name}
+          <h3 className={cn(
+            "font-medium truncate mb-1",
+            nameIsMissing ? "text-muted-foreground italic" : "text-sidebar-foreground"
+          )}>
+            {displayName}
           </h3>
           
           <p className="text-sm text-muted-foreground truncate">
