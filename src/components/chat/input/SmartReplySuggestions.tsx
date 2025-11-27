@@ -44,10 +44,10 @@ export const SmartReplySuggestions = ({
   }
 
   return (
-    <div className="border-t border-border bg-card/50 p-3">
-      <div className="flex items-center gap-2 mb-2">
-        <Sparkles className="h-4 w-4 text-primary" />
-        <span className="text-sm font-medium text-foreground">Sugestões IA</span>
+    <div className="border-t border-border bg-card/50 p-2">
+      <div className="flex items-center gap-2 mb-1">
+        <Sparkles className="h-3 w-3 text-primary" />
+        <span className="text-xs font-medium text-foreground">Sugestões IA</span>
         <Button
           variant="ghost"
           size="sm"
@@ -60,13 +60,13 @@ export const SmartReplySuggestions = ({
       </div>
 
       {isLoading ? (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground animate-pulse">
-          <Sparkles className="h-4 w-4" />
+        <div className="flex items-center gap-2 text-xs text-muted-foreground animate-pulse">
+          <Sparkles className="h-3 w-3" />
           <span>Gerando sugestões...</span>
         </div>
       ) : (
         <ScrollArea className="w-full">
-          <div className="flex gap-2 pb-2">
+          <div className="flex gap-1.5 pb-1">
             {suggestions.map((suggestion, index) => {
               const config = toneConfig[suggestion.tone];
               return (
@@ -75,12 +75,12 @@ export const SmartReplySuggestions = ({
                     <TooltipTrigger asChild>
                       <div
                         onClick={() => onSelectSuggestion(suggestion.text)}
-                        className={`w-[220px] flex-shrink-0 p-3 rounded-lg cursor-pointer border-2 ${config.borderColor} bg-background hover:bg-accent/30 transition-colors`}
+                        className={`w-[170px] flex-shrink-0 p-2 rounded-lg cursor-pointer border-2 ${config.borderColor} bg-background hover:bg-accent/30 transition-colors`}
                       >
-                        <Badge className={`text-xs ${config.badgeClass}`}>
+                        <Badge className={`text-[10px] ${config.badgeClass}`}>
                           {config.label}
                         </Badge>
-                        <p className="mt-2 text-sm text-foreground line-clamp-2 whitespace-normal break-words overflow-hidden">
+                        <p className="mt-1 text-sm text-foreground line-clamp-1 whitespace-normal break-words overflow-hidden">
                           {suggestion.text}
                         </p>
                       </div>
