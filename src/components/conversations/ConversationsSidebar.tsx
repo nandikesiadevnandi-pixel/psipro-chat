@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, Plus, Settings, Loader2, BarChart3, ChevronRight, ChevronLeft, MessageSquare } from "lucide-react";
+import { Search, Plus, Settings, Loader2, BarChart3, ChevronRight, ChevronLeft, MessageSquare, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -128,6 +128,12 @@ const ConversationsSidebar = ({ selectedId, onSelect, instanceId, isCollapsed, o
         </Button>
         
         {/* Quick links */}
+        <Link to="/whatsapp/contatos">
+          <Button variant="ghost" size="icon" title="Contatos">
+            <Users className="h-4 w-4" />
+          </Button>
+        </Link>
+        
         <Link to="/whatsapp/relatorio">
           <Button variant="ghost" size="icon" title="Relatórios">
             <BarChart3 className="h-4 w-4" />
@@ -168,6 +174,11 @@ const ConversationsSidebar = ({ selectedId, onSelect, instanceId, isCollapsed, o
       <div className="p-3 border-b border-sidebar-border flex items-center justify-between">
         <h1 className="text-lg font-semibold">Conversas</h1>
         <div className="flex items-center gap-1">
+          <Link to="/whatsapp/contatos">
+            <Button variant="ghost" size="icon" title="Contatos">
+              <Users className="h-5 w-5" />
+            </Button>
+          </Link>
           <Link to="/whatsapp/relatorio">
             <Button variant="ghost" size="icon" title="Relatórios">
               <BarChart3 className="h-5 w-5" />
