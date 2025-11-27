@@ -8,6 +8,9 @@ const corsHeaders = {
 // Auto sentiment analysis threshold (number of client messages to trigger analysis)
 const AUTO_SENTIMENT_THRESHOLD = 5;
 
+// Auto categorization threshold (number of client messages to trigger categorization)
+const AUTO_CATEGORIZATION_THRESHOLD = 5;
+
 interface EvolutionWebhookPayload {
   event: string;
   instance: string;
@@ -285,6 +288,57 @@ async function checkAndTriggerAutoSentiment(
   }
 }
 
+// Check and trigger automatic categorization
+async function checkAndTriggerAutoCategorization(
+  supabase: any,
+  conversationId: string,
+  supabaseUrl: string
+) {
+  try {
+    // 1. Buscar metadata da conversa para ver última categorização
+    const { data: conversation } = await supabase
+      .from('whatsapp_conversations')
+      .select('metadata')
+      .eq('id', conversationId)
+      .maybeSingle();
+
+    const lastCategorizedAt = conversation?.metadata?.categorized_at;
+
+    // 2. Contar mensagens do cliente desde última categorização
+    let query = supabase
+      .from('whatsapp_messages')
+      .select('id', { count: 'exact', head: true })
+      .eq('conversation_id', conversationId)
+      .eq('is_from_me', false);
+
+    // Se há categorização anterior, contar apenas mensagens mais recentes
+    if (lastCategorizedAt) {
+      query = query.gt('timestamp', lastCategorizedAt);
+    }
+
+    const { count } = await query;
+
+    console.log(`[auto-categorization] Messages since last categorization: ${count}`);
+
+    // 3. Se atingiu threshold, disparar categorização (async, não bloqueia)
+    if (count && count >= AUTO_CATEGORIZATION_THRESHOLD) {
+      console.log(`[auto-categorization] Triggering auto categorization for ${conversationId}`);
+      
+      // Chamar edge function de categorização (fire and forget)
+      fetch(`${supabaseUrl}/functions/v1/categorize-whatsapp-conversation`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
+        },
+        body: JSON.stringify({ conversationId }),
+      }).catch(err => console.error('[auto-categorization] Error triggering:', err));
+    }
+  } catch (error) {
+    console.error('[auto-categorization] Error checking categorization:', error);
+  }
+}
+
 // Process message upsert event
 async function processMessageUpsert(payload: EvolutionWebhookPayload, supabase: any) {
   try {
@@ -419,10 +473,11 @@ async function processMessageUpsert(payload: EvolutionWebhookPayload, supabase: 
       console.log('[evolution-webhook] Conversation updated successfully');
     }
 
-    // Se mensagem é do cliente (não é minha), verificar análise automática
+    // Se mensagem é do cliente (não é minha), verificar análises automáticas
     if (!key.fromMe) {
       const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
       checkAndTriggerAutoSentiment(supabase, conversationId, supabaseUrl);
+      checkAndTriggerAutoCategorization(supabase, conversationId, supabaseUrl);
     }
   } catch (error) {
     console.error('[evolution-webhook] Error in processMessageUpsert:', error);
