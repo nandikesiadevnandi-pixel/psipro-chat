@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
-import { Search, Users } from 'lucide-react';
+import { Search, Users, MessageSquare, BarChart3, Settings } from 'lucide-react';
 import { useWhatsAppContacts } from '@/hooks/whatsapp/useWhatsAppContacts';
 import { useWhatsAppInstances } from '@/hooks/whatsapp';
 import { ContactItem } from './ContactItem';
@@ -8,6 +8,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDebounce } from '@/hooks/useDebounce';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 interface ContactsSidebarProps {
   selectedContactId: string | null;
@@ -30,9 +32,28 @@ export function ContactsSidebar({ selectedContactId, onSelectContact }: Contacts
     <div className="w-[350px] border-r border-border bg-card flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b border-border">
-        <div className="flex items-center gap-2 mb-4">
-          <Users className="h-5 w-5 text-primary" />
-          <h1 className="text-lg font-semibold">Contatos</h1>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-primary" />
+            <h1 className="text-lg font-semibold">Contatos</h1>
+          </div>
+          <div className="flex items-center gap-1">
+            <Link to="/whatsapp">
+              <Button variant="ghost" size="icon" title="Conversas">
+                <MessageSquare className="h-5 w-5" />
+              </Button>
+            </Link>
+            <Link to="/whatsapp/relatorio">
+              <Button variant="ghost" size="icon" title="Relatórios">
+                <BarChart3 className="h-5 w-5" />
+              </Button>
+            </Link>
+            <Link to="/whatsapp/settings">
+              <Button variant="ghost" size="icon" title="Configurações">
+                <Settings className="h-5 w-5" />
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Search */}
