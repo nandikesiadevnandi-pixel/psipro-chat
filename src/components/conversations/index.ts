@@ -5,3 +5,4 @@ export { default as NewConversationModal } from "./NewConversationModal";
 export { InstanceFilter } from "./InstanceFilter";
 export { ConversationFiltersPopover } from "./ConversationFiltersPopover";
 export { ResponseStatusIndicator } from "./ResponseStatusIndicator";
+export { ConversationItemMenu } from "./ConversationItemMenu";
