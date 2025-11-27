@@ -210,6 +210,74 @@ async function findOrCreateContact(
   }
 }
 
+// Apply auto-assignment rules
+async function applyAutoAssignment(
+  supabase: any,
+  instanceId: string,
+  conversationId: string
+): Promise<void> {
+  try {
+    // 1. Buscar regra ativa para a instância
+    const { data: rule } = await supabase
+      .from('assignment_rules')
+      .select('*')
+      .eq('instance_id', instanceId)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (!rule) {
+      console.log('[auto-assignment] No active rule found for instance:', instanceId);
+      return; // Sem regra, conversa fica na fila
+    }
+
+    let assignedTo: string | null = null;
+
+    if (rule.rule_type === 'fixed') {
+      // Atribuição fixa
+      assignedTo = rule.fixed_agent_id;
+      console.log('[auto-assignment] Fixed assignment to:', assignedTo);
+    } else if (rule.rule_type === 'round_robin') {
+      // Round-robin
+      const agents = rule.round_robin_agents || [];
+      if (agents.length === 0) {
+        console.log('[auto-assignment] No agents in round-robin list');
+        return;
+      }
+
+      const nextIndex = (rule.round_robin_last_index + 1) % agents.length;
+      assignedTo = agents[nextIndex];
+      console.log(`[auto-assignment] Round-robin assignment to: ${assignedTo} (index: ${nextIndex})`);
+
+      // Atualizar índice para próxima vez
+      await supabase
+        .from('assignment_rules')
+        .update({ round_robin_last_index: nextIndex })
+        .eq('id', rule.id);
+    }
+
+    if (assignedTo) {
+      // Atribuir conversa
+      await supabase
+        .from('whatsapp_conversations')
+        .update({ assigned_to: assignedTo })
+        .eq('id', conversationId);
+
+      // Registrar no histórico
+      await supabase
+        .from('conversation_assignments')
+        .insert({
+          conversation_id: conversationId,
+          assigned_to: assignedTo,
+          reason: `Auto-atribuição: ${rule.name}`,
+        });
+
+      console.log('[auto-assignment] Conversation assigned successfully');
+    }
+  } catch (error) {
+    console.error('[auto-assignment] Error applying auto-assignment:', error);
+  }
+}
+
 // Find or create conversation
 async function findOrCreateConversation(
   supabase: any,
@@ -251,6 +319,10 @@ async function findOrCreateConversation(
     }
 
     console.log('[evolution-webhook] Conversation created:', newConversation.id);
+    
+    // Apply auto-assignment for new conversations
+    await applyAutoAssignment(supabase, instanceId, newConversation.id);
+    
     return newConversation.id;
   } catch (error) {
     console.error('[evolution-webhook] Error in findOrCreateConversation:', error);
