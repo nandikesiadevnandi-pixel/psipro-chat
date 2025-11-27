@@ -3,7 +3,7 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AssignmentRuleCard } from "./AssignmentRuleCard";
 import { AssignmentRuleDialog } from "./AssignmentRuleDialog";
-import { useAssignmentRules, AssignmentRule } from "@/hooks/whatsapp/useAssignmentRules";
+import { useAssignmentRules, type AssignmentRule } from "@/hooks/whatsapp/useAssignmentRules";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function AssignmentRulesManager() {
