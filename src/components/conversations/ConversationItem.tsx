@@ -85,6 +85,10 @@ const ConversationItem = ({
   
   // Get topics from metadata
   const topics = (conversation.metadata as any)?.topics || [];
+  
+  // Determine if conversation is closed or archived
+  const status = conversation.status;
+  const showStatusBadge = status === "closed" || status === "archived";
 
   return (
     <ConversationItemMenu conversation={conversation}>
@@ -154,13 +158,18 @@ const ConversationItem = ({
             </div>
           )}
 
-          {/* Assignment status row */}
-          <div className="mt-1.5">
+          {/* Status and Assignment row */}
+          <div className="mt-1.5 flex items-center gap-2">
             <QueueIndicator
               assignedTo={conversation.assigned_to}
               assignedToName={conversation.assigned_profile?.full_name}
               size="sm"
             />
+            {showStatusBadge && (
+              <Badge variant="secondary" className="text-xs px-2 py-0 h-5">
+                {status === "closed" ? "Encerrada" : "Arquivada"}
+              </Badge>
+            )}
           </div>
         </div>
       </div>
