@@ -80,16 +80,15 @@ export const ChatHeader = ({ contact, sentiment, isAnalyzing, onAnalyze, convers
               )}>
                 {displayName}
               </h2>
-              {nameIsMissing && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-6 w-6 p-0" 
-                  onClick={() => setIsEditContactModalOpen(true)}
-                >
-                  <Pencil className="h-3 w-3 text-muted-foreground" />
-                </Button>
-              )}
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 w-6 p-0" 
+                onClick={() => setIsEditContactModalOpen(true)}
+                title="Editar contato"
+              >
+                <Pencil className="h-3 w-3 text-muted-foreground" />
+              </Button>
             </div>
             <p className="text-xs text-muted-foreground">
               {contact.phone_number}
