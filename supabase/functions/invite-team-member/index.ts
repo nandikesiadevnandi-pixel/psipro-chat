@@ -48,20 +48,18 @@ Deno.serve(async (req) => {
 
     console.log('User created:', userData.user.id);
 
-    // Assign role
+    // Update role (trigger already created default 'agent' role)
     const { error: roleError } = await supabaseAdmin
       .from('user_roles')
-      .insert({
-        user_id: userData.user.id,
-        role: role
-      });
+      .update({ role: role })
+      .eq('user_id', userData.user.id);
 
     if (roleError) {
-      console.error('Error assigning role:', roleError);
+      console.error('Error updating role:', roleError);
       throw roleError;
     }
 
-    console.log('Role assigned successfully');
+    console.log('Role updated successfully to:', role);
 
     return new Response(
       JSON.stringify({ 
