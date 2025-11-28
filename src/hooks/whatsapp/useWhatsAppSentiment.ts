@@ -46,14 +46,22 @@ export const useWhatsAppSentiment = (conversationId: string | null) => {
     if (!conversationId) return;
 
     const channel = supabase
-      .channel(`sentiment-${conversationId}`)
+      .channel(`sentiment-updates-${conversationId}`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'whatsapp_sentiment_analysis',
-        filter: `conversation_id=eq.${conversationId}`
-      }, () => {
-        queryClient.invalidateQueries({ queryKey: ['whatsapp', 'sentiment', conversationId] });
+      }, (payload) => {
+        const newRecord = payload.new as any;
+        const oldRecord = payload.old as any;
+        
+        if (newRecord?.conversation_id === conversationId || 
+            oldRecord?.conversation_id === conversationId) {
+          console.log('[sentiment-realtime] Update detected, invalidating query');
+          queryClient.invalidateQueries({ 
+            queryKey: ['whatsapp', 'sentiment', conversationId] 
+          });
+        }
       })
       .subscribe();
 
