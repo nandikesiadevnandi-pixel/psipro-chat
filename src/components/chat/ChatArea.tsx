@@ -100,7 +100,6 @@ export const ChatArea = ({ conversationId }: ChatAreaProps) => {
         conversationId={conversationId}
         onSendText={handleSendText}
         onSendMedia={handleSendMedia}
-        disabled={sendMutation.isPending}
       />
     </div>
   );
