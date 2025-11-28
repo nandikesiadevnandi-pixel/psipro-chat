@@ -93,10 +93,28 @@ export function ConversationSentiment({ conversationId }: ConversationSentimentP
   if (!sentiment) {
     return (
       <div className="space-y-2">
-        <h3 className="text-sm font-semibold flex items-center gap-2">
-          <Heart className="h-4 w-4" />
-          Sentimento
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold flex items-center gap-2">
+            <Heart className="h-4 w-4" />
+            Sentimento
+          </h3>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-6 w-6">
+                  <Info className="h-3 w-3 text-muted-foreground" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left" className="max-w-[220px]">
+                <div className="space-y-1 text-xs">
+                  <p className="font-medium">Análise Automática</p>
+                  <p>A análise de sentimento é disparada automaticamente a cada 5 mensagens recebidas do cliente.</p>
+                  <p className="pt-1">Você também pode clicar em "Analisar" para executar manualmente.</p>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
         <Card className="p-4 space-y-3">
           <p className="text-sm text-muted-foreground text-center">
             Aguardando análise...
@@ -144,9 +162,13 @@ export function ConversationSentiment({ conversationId }: ConversationSentimentP
                 <Info className="h-3 w-3 text-muted-foreground" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="left" className="max-w-[200px]">
+            <TooltipContent side="left" className="max-w-[220px]">
               <div className="space-y-1 text-xs">
-                <p>Baseado em {sentiment.messages_analyzed} mensagens</p>
+                <p className="font-medium">Análise Automática</p>
+                <p>Atualizada automaticamente a cada 5 mensagens do cliente.</p>
+                <p className="pt-1 border-t border-border/50 mt-1.5">
+                  Baseado em {sentiment.messages_analyzed} mensagens
+                </p>
                 <p>Última análise: {timeAgo}</p>
                 <p>Confiança: {Math.round(sentiment.confidence_score * 100)}%</p>
               </div>

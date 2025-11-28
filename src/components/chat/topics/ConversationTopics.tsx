@@ -1,5 +1,11 @@
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Tag } from 'lucide-react';
+import { RefreshCw, Tag, Info } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useConversationTopics } from '@/hooks/whatsapp/useConversationTopics';
 import { useCategorizeConversation } from '@/hooks/whatsapp/useCategorizeConversation';
 import { TopicBadges } from './TopicBadges';
@@ -38,6 +44,29 @@ export function ConversationTopics({ conversationId }: ConversationTopicsProps) 
         <div className="flex items-center gap-2">
           <Tag className="h-4 w-4 text-muted-foreground" />
           <h4 className="font-semibold text-sm">Tópicos</h4>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-5 w-5">
+                  <Info className="h-3 w-3 text-muted-foreground" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left" className="max-w-[220px]">
+                <div className="space-y-1 text-xs">
+                  <p className="font-medium">Categorização Automática</p>
+                  <p>Os tópicos são atualizados automaticamente a cada 5 mensagens recebidas do cliente.</p>
+                  {topicsData?.categorized_at && (
+                    <p className="pt-1 border-t border-border/50 mt-1.5">
+                      Última atualização:{' '}
+                      {format(new Date(topicsData.categorized_at), "dd/MM 'às' HH:mm", {
+                        locale: ptBR,
+                      })}
+                    </p>
+                  )}
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
         <Button
           variant="ghost"
