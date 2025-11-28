@@ -105,101 +105,103 @@ const ConversationItem = ({
   const showStatusBadge = status === "closed" || status === "archived";
 
   return (
-    <ConversationItemMenu conversation={conversation}>
-      <div
-        onClick={onClick}
-        className={`
-          flex items-center gap-3 p-3 cursor-pointer transition-colors
-          hover:bg-sidebar-accent
-          ${isSelected ? "bg-sidebar-accent" : ""}
-        `}
-      >
-        {/* Avatar */}
-        <Avatar className="h-10 w-10 shrink-0">
-          <AvatarImage src={profilePicture || undefined} alt={contactName} />
-          <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
-            {getInitials(contactName)}
-          </AvatarFallback>
-        </Avatar>
+    <>
+      <ConversationItemMenu conversation={conversation}>
+        <div
+          onClick={onClick}
+          className={`
+            flex items-center gap-3 p-3 cursor-pointer transition-colors
+            hover:bg-sidebar-accent
+            ${isSelected ? "bg-sidebar-accent" : ""}
+          `}
+        >
+          {/* Avatar */}
+          <Avatar className="h-10 w-10 shrink-0">
+            <AvatarImage src={profilePicture || undefined} alt={contactName} />
+            <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
+              {getInitials(contactName)}
+            </AvatarFallback>
+          </Avatar>
 
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          {/* Name and timestamp row */}
-          <div className="flex items-center justify-between gap-2 mb-1">
-            <div className="flex items-center gap-1.5 min-w-0 flex-1">
-              <span className={cn(
-                "font-medium text-sm truncate",
-                nameIsMissing && "text-muted-foreground italic"
-              )}>
-                {contactName}
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            {/* Name and timestamp row */}
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                <span className={cn(
+                  "font-medium text-sm truncate",
+                  nameIsMissing && "text-muted-foreground italic"
+                )}>
+                  {contactName}
+                </span>
+                {nameIsMissing && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-5 w-5 p-0 flex-shrink-0" 
+                    onClick={handleEditClick}
+                  >
+                    <Pencil className="h-3 w-3 text-muted-foreground" />
+                  </Button>
+                )}
+                {sentimentEmoji && (
+                  <span className="text-sm shrink-0">{sentimentEmoji}</span>
+                )}
+              </div>
+              <span className="text-xs text-muted-foreground shrink-0">
+                {formatTimestamp(lastMessageTime)}
               </span>
-              {nameIsMissing && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-5 w-5 p-0 flex-shrink-0" 
-                  onClick={handleEditClick}
-                >
-                  <Pencil className="h-3 w-3 text-muted-foreground" />
-                </Button>
-              )}
-              {sentimentEmoji && (
-                <span className="text-sm shrink-0">{sentimentEmoji}</span>
-              )}
             </div>
-            <span className="text-xs text-muted-foreground shrink-0">
-              {formatTimestamp(lastMessageTime)}
-            </span>
-          </div>
 
-          {/* Preview and indicators row */}
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 flex-1 min-w-0">
-              <p className="text-sm text-muted-foreground truncate">
-                {lastMessage || "Sem mensagens"}
-              </p>
-              {foundByContent && (
-                <Search className="h-3 w-3 text-muted-foreground shrink-0" />
-              )}
+            {/* Preview and indicators row */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                <p className="text-sm text-muted-foreground truncate">
+                  {lastMessage || "Sem mensagens"}
+                </p>
+                {foundByContent && (
+                  <Search className="h-3 w-3 text-muted-foreground shrink-0" />
+                )}
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <ResponseStatusIndicator
+                  isLastMessageFromMe={conversation.isLastMessageFromMe}
+                  conversationStatus={conversation.status || undefined}
+                />
+                {unreadCount > 0 && (
+                  <Badge
+                    variant="default"
+                    className="h-5 min-w-5 px-1.5 rounded-full bg-primary text-primary-foreground text-xs font-medium flex items-center justify-center"
+                  >
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </Badge>
+                )}
+              </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <ResponseStatusIndicator
-                isLastMessageFromMe={conversation.isLastMessageFromMe}
-                conversationStatus={conversation.status || undefined}
+
+            {/* Topics row */}
+            {topics.length > 0 && (
+              <div className="mt-1.5">
+                <TopicBadges topics={topics} size="sm" maxTopics={2} />
+              </div>
+            )}
+
+            {/* Status and Assignment row */}
+            <div className="mt-1.5 flex items-center gap-2">
+              <QueueIndicator
+                assignedTo={conversation.assigned_to}
+                assignedToName={conversation.assigned_profile?.full_name}
+                size="sm"
               />
-              {unreadCount > 0 && (
-                <Badge
-                  variant="default"
-                  className="h-5 min-w-5 px-1.5 rounded-full bg-primary text-primary-foreground text-xs font-medium flex items-center justify-center"
-                >
-                  {unreadCount > 99 ? "99+" : unreadCount}
+              {showStatusBadge && (
+                <Badge variant="secondary" className="text-xs px-2 py-0 h-5">
+                  {status === "closed" ? "Encerrada" : "Arquivada"}
                 </Badge>
               )}
             </div>
           </div>
-
-          {/* Topics row */}
-          {topics.length > 0 && (
-            <div className="mt-1.5">
-              <TopicBadges topics={topics} size="sm" maxTopics={2} />
-            </div>
-          )}
-
-          {/* Status and Assignment row */}
-          <div className="mt-1.5 flex items-center gap-2">
-            <QueueIndicator
-              assignedTo={conversation.assigned_to}
-              assignedToName={conversation.assigned_profile?.full_name}
-              size="sm"
-            />
-            {showStatusBadge && (
-              <Badge variant="secondary" className="text-xs px-2 py-0 h-5">
-                {status === "closed" ? "Encerrada" : "Arquivada"}
-              </Badge>
-            )}
-          </div>
         </div>
-      </div>
+      </ConversationItemMenu>
       
       {/* Edit Contact Modal */}
       {contact && (
@@ -215,7 +217,7 @@ const ConversationItem = ({
           }}
         />
       )}
-    </ConversationItemMenu>
+    </>
   );
 };
 
