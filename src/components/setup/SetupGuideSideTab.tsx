@@ -19,14 +19,14 @@ export const SetupGuideSideTab = ({ onClick }: SetupGuideSideTabProps) => {
     <button
       onClick={onClick}
       className={cn(
-        "fixed right-0 top-1/2 z-50",
+        "fixed top-1/2 -right-[1px] z-50",
         "flex items-center gap-2 px-4 py-2.5",
         "bg-primary text-primary-foreground",
         "hover:bg-primary/90",
-        "transition-all duration-200 hover:pr-5",
-        "shadow-lg border-l-0 rounded-l-lg",
-        "origin-right",
-        "transform -translate-y-1/2 rotate-[-90deg] translate-x-[50%]"
+        "transition-all duration-200",
+        "shadow-lg rounded-tl-lg rounded-bl-lg border-r-0",
+        "origin-bottom-right",
+        "-rotate-90 -translate-x-full translate-y-1/2"
       )}
       title={`${remainingSteps} passos restantes`}
     >
