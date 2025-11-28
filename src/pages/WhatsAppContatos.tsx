@@ -3,11 +3,9 @@ import { ContactsSidebar } from '@/components/contacts/ContactsSidebar';
 import { ContactDetails } from '@/components/contacts/ContactDetails';
 import { useInstanceStatusMonitor } from '@/hooks/useInstanceStatusMonitor';
 import { DisconnectedInstancesBanner } from '@/components/notifications/DisconnectedInstancesBanner';
-import { SetupGuideModal } from '@/components/setup';
 
 export default function WhatsAppContatos() {
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
-  const [showSetupGuide, setShowSetupGuide] = useState(false);
   const { disconnectedInstances } = useInstanceStatusMonitor();
 
   return (
@@ -15,14 +13,10 @@ export default function WhatsAppContatos() {
       {/* Disconnected Instances Banner */}
       <DisconnectedInstancesBanner instances={disconnectedInstances} />
       
-      {/* Setup Guide Modal */}
-      <SetupGuideModal open={showSetupGuide} onOpenChange={setShowSetupGuide} />
-      
       <div className="flex flex-1 overflow-hidden">
       <ContactsSidebar
         selectedContactId={selectedContactId}
         onSelectContact={setSelectedContactId}
-        onOpenSetupGuide={() => setShowSetupGuide(true)}
       />
       
       <main className="flex-1 flex flex-col">
