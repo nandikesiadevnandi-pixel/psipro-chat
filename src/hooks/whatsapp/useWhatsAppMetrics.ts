@@ -5,6 +5,7 @@ import { format, eachDayOfInterval } from 'date-fns';
 export interface WhatsAppMetricsFilters {
   dateRange: { from: Date; to: Date };
   instanceId?: string | null;
+  agentId?: string | null;
 }
 
 export interface WhatsAppMetrics {
@@ -13,6 +14,8 @@ export interface WhatsAppMetrics {
   closed: number;
   archived: number;
   avgResponseTimeMinutes: number;
+  resolutionRate: number;
+  avgFirstResponseTimeMinutes: number;
   dailyTrend: { date: string; count: number }[];
   statusDistribution: { status: string; count: number; percentage: number }[];
   topicsDistribution: { topic: string; count: number }[];
@@ -24,6 +27,13 @@ export interface WhatsAppMetrics {
     durationHours: number;
     createdAt: string;
   }>;
+  agentPerformance: Array<{
+    agentId: string;
+    agentName: string;
+    totalConversations: number;
+    closedConversations: number;
+    avgResponseTimeMinutes: number;
+  }>;
   // Previous period comparison
   previousPeriod: {
     total: number;
@@ -31,25 +41,32 @@ export interface WhatsAppMetrics {
     closed: number;
     archived: number;
     avgResponseTimeMinutes: number;
+    resolutionRate: number;
+    avgFirstResponseTimeMinutes: number;
   };
 }
 
 export const useWhatsAppMetrics = (filters: WhatsAppMetricsFilters) => {
   return useQuery({
-    queryKey: ['whatsapp-metrics', filters.dateRange.from.toISOString(), filters.dateRange.to.toISOString(), filters.instanceId],
+    queryKey: ['whatsapp-metrics', filters.dateRange.from.toISOString(), filters.dateRange.to.toISOString(), filters.instanceId, filters.agentId],
     queryFn: async () => {
       const { from, to } = filters.dateRange;
 
       // Build base query for conversations
       let conversationsQuery = supabase
         .from('whatsapp_conversations')
-        .select('id, status, last_message_at, created_at, contact_id, metadata, instance_id')
+        .select('id, status, last_message_at, created_at, contact_id, metadata, instance_id, assigned_to')
         .gte('last_message_at', from.toISOString())
         .lte('last_message_at', to.toISOString());
 
       // Apply instance filter if provided
       if (filters.instanceId) {
         conversationsQuery = conversationsQuery.eq('instance_id', filters.instanceId);
+      }
+
+      // Apply agent filter if provided
+      if (filters.agentId) {
+        conversationsQuery = conversationsQuery.eq('assigned_to', filters.agentId);
       }
 
       const { data: conversations, error: convError } = await conversationsQuery;
@@ -64,6 +81,8 @@ export const useWhatsAppMetrics = (filters: WhatsAppMetricsFilters) => {
       // Calculate average response time
       const conversationIds = conversations?.map((c: any) => c.id) || [];
       let avgResponseTimeMinutes = 0;
+      let avgFirstResponseTimeMinutes = 0;
+      let messagesByConv: Record<string, any[]> = {};
 
       if (conversationIds.length > 0) {
         const { data: messages, error: msgError } = await supabase
@@ -76,7 +95,7 @@ export const useWhatsAppMetrics = (filters: WhatsAppMetricsFilters) => {
 
         // Calculate TMR: for each client message, find the next CSM message
         const responseTimes: number[] = [];
-        const messagesByConv = messages?.reduce((acc: any, msg: any) => {
+        messagesByConv = messages?.reduce((acc: any, msg: any) => {
           if (!acc[msg.conversation_id]) acc[msg.conversation_id] = [];
           acc[msg.conversation_id].push(msg);
           return acc;
@@ -107,7 +126,37 @@ export const useWhatsAppMetrics = (filters: WhatsAppMetricsFilters) => {
         if (responseTimes.length > 0) {
           avgResponseTimeMinutes = responseTimes.reduce((sum, t) => sum + t, 0) / responseTimes.length;
         }
+
+        // Calculate average first response time
+        const firstResponseTimes: number[] = [];
+
+        Object.values(messagesByConv).forEach((convMessages: any[]) => {
+          // Find first client message
+          const firstClientMsg = convMessages.find(m => !m.is_from_me);
+          if (!firstClientMsg) return;
+
+          // Find first agent response AFTER client message
+          const firstAgentResponse = convMessages.find(
+            m => m.is_from_me && new Date(m.timestamp) > new Date(firstClientMsg.timestamp)
+          );
+
+          if (firstAgentResponse) {
+            const diffMinutes = (new Date(firstAgentResponse.timestamp).getTime() - new Date(firstClientMsg.timestamp).getTime()) / (1000 * 60);
+            
+            // Filter extreme values (> 0 and < 24h)
+            if (diffMinutes > 0 && diffMinutes < 1440) {
+              firstResponseTimes.push(diffMinutes);
+            }
+          }
+        });
+
+        if (firstResponseTimes.length > 0) {
+          avgFirstResponseTimeMinutes = firstResponseTimes.reduce((sum, t) => sum + t, 0) / firstResponseTimes.length;
+        }
       }
+
+      // Calculate resolution rate
+      const resolutionRate = total > 0 ? (closed / total) * 100 : 0;
 
       // Calculate daily trend with all days in range
       const days = eachDayOfInterval({ start: from, end: to });
@@ -203,6 +252,76 @@ export const useWhatsAppMetrics = (filters: WhatsAppMetricsFilters) => {
         };
       }).sort((a: any, b: any) => b.durationHours - a.durationHours) || [];
 
+      // Calculate agent performance
+      const agentPerformance: Array<{
+        agentId: string;
+        agentName: string;
+        totalConversations: number;
+        closedConversations: number;
+        avgResponseTimeMinutes: number;
+      }> = [];
+
+      // Group conversations by agent
+      const conversationsByAgent = conversations?.reduce((acc: Record<string, any[]>, conv: any) => {
+        const agentId = conv.assigned_to;
+        if (agentId) {
+          if (!acc[agentId]) acc[agentId] = [];
+          acc[agentId].push(conv);
+        }
+        return acc;
+      }, {} as Record<string, any[]>) || {};
+
+      const agentIds = Object.keys(conversationsByAgent);
+      
+      if (agentIds.length > 0) {
+        // Fetch agent details
+        const { data: agentsData } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', agentIds);
+
+        for (const agent of agentsData || []) {
+          const agentConvs = conversationsByAgent[agent.id] || [];
+          const agentConvIds = agentConvs.map(c => c.id);
+          
+          // Calculate agent response time
+          let agentAvgResponseTime = 0;
+          if (agentConvIds.length > 0) {
+            const agentResponseTimes: number[] = [];
+            
+            agentConvIds.forEach((convId: string) => {
+              const convMessages = messagesByConv[convId] || [];
+              for (let i = 0; i < convMessages.length; i++) {
+                const msg = convMessages[i];
+                if (!msg.is_from_me) {
+                  const nextCsmMsg = convMessages.slice(i + 1).find(m => m.is_from_me);
+                  if (nextCsmMsg) {
+                    const clientTime = new Date(msg.timestamp).getTime();
+                    const csmTime = new Date(nextCsmMsg.timestamp).getTime();
+                    const diffMinutes = (csmTime - clientTime) / (1000 * 60);
+                    if (diffMinutes > 0.16 && diffMinutes < 1440) {
+                      agentResponseTimes.push(diffMinutes);
+                    }
+                  }
+                }
+              }
+            });
+
+            if (agentResponseTimes.length > 0) {
+              agentAvgResponseTime = agentResponseTimes.reduce((sum, t) => sum + t, 0) / agentResponseTimes.length;
+            }
+          }
+
+          agentPerformance.push({
+            agentId: agent.id,
+            agentName: agent.full_name,
+            totalConversations: agentConvs.length,
+            closedConversations: agentConvs.filter(c => c.status === 'closed').length,
+            avgResponseTimeMinutes: agentAvgResponseTime
+          });
+        }
+      }
+
       // Calculate previous period metrics for comparison
       const periodDuration = to.getTime() - from.getTime();
       const previousFrom = new Date(from.getTime() - periodDuration);
@@ -218,6 +337,10 @@ export const useWhatsAppMetrics = (filters: WhatsAppMetricsFilters) => {
         previousQuery = previousQuery.eq('instance_id', filters.instanceId);
       }
 
+      if (filters.agentId) {
+        previousQuery = previousQuery.eq('assigned_to', filters.agentId);
+      }
+
       const { data: previousConversations } = await previousQuery;
 
       const previousTotal = previousConversations?.length || 0;
@@ -228,6 +351,7 @@ export const useWhatsAppMetrics = (filters: WhatsAppMetricsFilters) => {
       // Calculate previous period response time
       const previousConversationIds = previousConversations?.map((c: any) => c.id) || [];
       let previousAvgResponseTimeMinutes = 0;
+      let previousAvgFirstResponseTimeMinutes = 0;
 
       if (previousConversationIds.length > 0) {
         const { data: previousMessages } = await supabase
@@ -263,7 +387,33 @@ export const useWhatsAppMetrics = (filters: WhatsAppMetricsFilters) => {
         if (previousResponseTimes.length > 0) {
           previousAvgResponseTimeMinutes = previousResponseTimes.reduce((sum, t) => sum + t, 0) / previousResponseTimes.length;
         }
+
+        // Calculate previous period first response time
+        const previousFirstResponseTimes: number[] = [];
+
+        Object.values(previousMessagesByConv).forEach((convMessages: any[]) => {
+          const firstClientMsg = convMessages.find(m => !m.is_from_me);
+          if (!firstClientMsg) return;
+
+          const firstAgentResponse = convMessages.find(
+            m => m.is_from_me && new Date(m.timestamp) > new Date(firstClientMsg.timestamp)
+          );
+
+          if (firstAgentResponse) {
+            const diffMinutes = (new Date(firstAgentResponse.timestamp).getTime() - new Date(firstClientMsg.timestamp).getTime()) / (1000 * 60);
+            if (diffMinutes > 0 && diffMinutes < 1440) {
+              previousFirstResponseTimes.push(diffMinutes);
+            }
+          }
+        });
+
+        if (previousFirstResponseTimes.length > 0) {
+          previousAvgFirstResponseTimeMinutes = previousFirstResponseTimes.reduce((sum, t) => sum + t, 0) / previousFirstResponseTimes.length;
+        }
       }
+
+      // Calculate previous period resolution rate
+      const previousResolutionRate = previousTotal > 0 ? (previousClosed / previousTotal) * 100 : 0;
 
       return {
         total,
@@ -271,17 +421,22 @@ export const useWhatsAppMetrics = (filters: WhatsAppMetricsFilters) => {
         closed,
         archived,
         avgResponseTimeMinutes,
+        resolutionRate,
+        avgFirstResponseTimeMinutes,
         dailyTrend,
         statusDistribution,
         topicsDistribution,
         sentimentDistribution,
         longestConversations,
+        agentPerformance,
         previousPeriod: {
           total: previousTotal,
           active: previousActive,
           closed: previousClosed,
           archived: previousArchived,
-          avgResponseTimeMinutes: previousAvgResponseTimeMinutes
+          avgResponseTimeMinutes: previousAvgResponseTimeMinutes,
+          resolutionRate: previousResolutionRate,
+          avgFirstResponseTimeMinutes: previousAvgFirstResponseTimeMinutes
         }
       } as WhatsAppMetrics;
     },
