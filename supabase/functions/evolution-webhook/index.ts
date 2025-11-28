@@ -146,6 +146,53 @@ async function downloadAndUploadMedia(
   }
 }
 
+// Fetch and update profile picture in background
+async function fetchAndUpdateProfilePicture(
+  supabase: any,
+  apiUrl: string,
+  apiKey: string,
+  instanceName: string,
+  phoneNumber: string,
+  contactId: string
+): Promise<void> {
+  try {
+    const response = await fetch(
+      `${apiUrl}/chat/fetchProfile/${instanceName}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': apiKey,
+        },
+        body: JSON.stringify({ number: phoneNumber }),
+      }
+    );
+
+    if (!response.ok) {
+      console.log(`[evolution-webhook] Failed to fetch profile for ${phoneNumber}: ${response.status}`);
+      return;
+    }
+
+    const data = await response.json();
+    const profilePictureUrl = data.profilePictureUrl || data.picture;
+
+    if (profilePictureUrl) {
+      await supabase
+        .from('whatsapp_contacts')
+        .update({ 
+          profile_picture_url: profilePictureUrl,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', contactId);
+      
+      console.log(`[evolution-webhook] Profile picture updated for contact: ${contactId}`);
+    }
+  } catch (error) {
+    console.log('[evolution-webhook] Failed to fetch profile picture:', error);
+    // Erro silencioso - cron job vai pegar depois
+  }
+}
+
 // Find or create contact - only update name if message is FROM contact
 async function findOrCreateContact(
   supabase: any,
@@ -153,7 +200,10 @@ async function findOrCreateContact(
   phoneNumber: string,
   name: string,
   isGroup: boolean,
-  isFromMe: boolean
+  isFromMe: boolean,
+  apiUrl?: string,
+  apiKey?: string,
+  instanceName?: string
 ): Promise<string | null> {
   try {
     // First check if contact exists
@@ -209,6 +259,13 @@ async function findOrCreateContact(
     }
 
     console.log(`[evolution-webhook] Contact created: ${newContact.id} Name: ${name}`);
+    
+    // Buscar foto de perfil em background (fire-and-forget)
+    if (apiUrl && apiKey && instanceName) {
+      fetchAndUpdateProfilePicture(supabase, apiUrl, apiKey, instanceName, phoneNumber, newContact.id)
+        .catch(err => console.log('[evolution-webhook] Background profile fetch error:', err));
+    }
+    
     return newContact.id;
   } catch (error) {
     console.error('[evolution-webhook] Error in findOrCreateContact:', error);
@@ -550,7 +607,10 @@ async function processMessageUpsert(payload: EvolutionWebhookPayload, supabase: 
       phone,
       pushName || phone,
       isGroup,
-      key.fromMe
+      key.fromMe,
+      secrets.api_url,
+      secrets.api_key,
+      instanceData.instance_name
     );
 
     if (!contactId) {
