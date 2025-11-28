@@ -9,6 +9,7 @@ type AppRole = 'admin' | 'supervisor' | 'agent';
 interface Profile {
   id: string;
   full_name: string;
+  email: string | null;
   avatar_url: string | null;
   status: 'online' | 'offline' | 'away' | 'busy';
   created_at: string;
@@ -24,6 +25,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
   isAdmin: boolean;
   isSupervisor: boolean;
   isAgent: boolean;
@@ -172,6 +174,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     navigate('/auth');
   };
 
+  const refreshProfile = async () => {
+    if (user) {
+      await loadUserData(user.id);
+    }
+  };
+
   const isAdmin = role === 'admin';
   const isSupervisor = role === 'supervisor';
   const isAgent = role === 'agent';
@@ -194,6 +202,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signIn,
     signUp,
     signOut,
+    refreshProfile,
     isAdmin,
     isSupervisor,
     isAgent,

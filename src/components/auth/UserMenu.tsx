@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   DropdownMenu,
@@ -10,6 +11,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { LogOut, User as UserIcon, Circle } from 'lucide-react';
+import { ProfileModal } from './ProfileModal';
 
 const statusColors = {
   online: 'bg-green-500',
@@ -26,6 +28,7 @@ const roleLabels = {
 
 export function UserMenu() {
   const { profile, role, signOut } = useAuth();
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   if (!profile || !role) {
     return null;
@@ -67,7 +70,7 @@ export function UserMenu() {
         <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
         <DropdownMenuSeparator />
         
-        <DropdownMenuItem disabled>
+        <DropdownMenuItem onClick={() => setIsProfileOpen(true)}>
           <UserIcon className="mr-2 h-4 w-4" />
           <span>Perfil</span>
         </DropdownMenuItem>
@@ -79,6 +82,8 @@ export function UserMenu() {
           <span>Sair</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
+
+      <ProfileModal open={isProfileOpen} onOpenChange={setIsProfileOpen} />
     </DropdownMenu>
   );
 }
