@@ -11,13 +11,15 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { UserMenu } from '@/components/auth/UserMenu';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { SetupGuideButton } from '@/components/setup';
 
 interface ContactsSidebarProps {
   selectedContactId: string | null;
   onSelectContact: (contactId: string) => void;
+  onOpenSetupGuide: () => void;
 }
 
-export function ContactsSidebar({ selectedContactId, onSelectContact }: ContactsSidebarProps) {
+export function ContactsSidebar({ selectedContactId, onSelectContact, onOpenSetupGuide }: ContactsSidebarProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedInstanceId, setSelectedInstanceId] = useState<string>('all');
   const [sortBy, setSortBy] = useState<ContactSortOption>('last_interaction');
@@ -53,6 +55,7 @@ export function ContactsSidebar({ selectedContactId, onSelectContact }: Contacts
             <h1 className="text-lg font-semibold">Contatos</h1>
           </div>
           <div className="flex items-center gap-1">
+            <SetupGuideButton onClick={onOpenSetupGuide} />
             <Link to="/whatsapp">
               <Button variant="ghost" size="icon" title="Conversas">
                 <MessageSquare className="h-5 w-5" />
