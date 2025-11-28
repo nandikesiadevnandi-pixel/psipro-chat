@@ -9,5 +9,6 @@ export { ImageViewerModal } from './ImageViewerModal';
 export { ChatHeaderMenu } from './ChatHeaderMenu';
 export { EditContactModal } from './EditContactModal';
 export { EditHistoryPopover } from './EditHistoryPopover';
+export { EditMessageModal } from './EditMessageModal';
 export * from './input';
 export * from './details';

@@ -22,6 +22,7 @@ export { useAssignmentRules } from './useAssignmentRules';
 export { useMessageReactions } from './useMessageReactions';
 export { useMessageReaction } from './useMessageReaction';
 export { useMessageEditHistory } from './useMessageEditHistory';
+export { useEditMessage } from './useEditMessage';
 export type { AssignmentRule } from './useAssignmentRules';
 export type { SmartReplySuggestion, SmartReplyResponse } from './useSmartReply';
 export type { ContactSortOption, ContactWithMetrics, ContactsResult } from './useWhatsAppContacts';
