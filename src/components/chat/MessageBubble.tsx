@@ -9,6 +9,8 @@ import { ImageViewerModal } from "./ImageViewerModal";
 import { MessageReactionButton } from "./MessageReactionButton";
 import { useMessageReaction } from "@/hooks/whatsapp/useMessageReaction";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { EditHistoryPopover } from "./EditHistoryPopover";
 
 type Message = Tables<'whatsapp_messages'>;
 type Reaction = Tables<'whatsapp_reactions'>;
@@ -204,7 +206,7 @@ export const MessageBubble = ({ message, reactions = [], onReply }: MessageBubbl
           
           {renderContent()}
           
-          <div className="flex items-center justify-end gap-1 mt-1">
+          <div className="flex items-center justify-end gap-1.5 mt-1">
             <span
               className={cn(
                 'text-xs',
@@ -213,6 +215,27 @@ export const MessageBubble = ({ message, reactions = [], onReply }: MessageBubbl
             >
               {time}
             </span>
+            {message.edited_at && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button 
+                    className={cn(
+                      "text-xs italic hover:underline cursor-pointer",
+                      isFromMe ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                    )}
+                  >
+                    Editado
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="p-0 w-auto">
+                  <EditHistoryPopover 
+                    messageId={message.message_id}
+                    currentContent={message.content}
+                    originalContent={message.original_content}
+                  />
+                </PopoverContent>
+              </Popover>
+            )}
             {getStatusIcon()}
           </div>
         </Card>

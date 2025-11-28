@@ -41,6 +41,11 @@ function getMessageType(message: any): string {
   return 'text';
 }
 
+// Detect if message is an edited message
+function isEditedMessage(message: any): boolean {
+  return !!(message?.editedMessage || message?.protocolMessage?.editedMessage);
+}
+
 // Extract content/caption from message
 function getMessageContent(message: any, type: string): string {
   if (message.conversation) return message.conversation;
@@ -718,6 +723,68 @@ async function processConnectionUpdate(payload: EvolutionWebhookPayload, supabas
   }
 }
 
+// Process message edit
+async function processMessageEdit(payload: EvolutionWebhookPayload, supabase: any) {
+  try {
+    const { data } = payload;
+    const editedMessage = data.message?.editedMessage || data.message?.protocolMessage?.editedMessage;
+    
+    if (!editedMessage) {
+      console.log('[evolution-webhook] No editedMessage found in payload');
+      return;
+    }
+    
+    const messageId = editedMessage.key?.id || data.key?.id;
+    const newContent = editedMessage.conversation || editedMessage.extendedTextMessage?.text || '';
+    
+    console.log('[evolution-webhook] Processing message edit:', messageId);
+    
+    // 1. Fetch current message
+    const { data: currentMessage, error: fetchError } = await supabase
+      .from('whatsapp_messages')
+      .select('id, content, original_content, conversation_id')
+      .eq('message_id', messageId)
+      .maybeSingle();
+    
+    if (fetchError || !currentMessage) {
+      console.error('[evolution-webhook] Error fetching message or message not found:', fetchError);
+      return;
+    }
+    
+    // 2. Save to edit history
+    const { error: historyError } = await supabase
+      .from('whatsapp_message_edit_history')
+      .insert({
+        message_id: messageId,
+        conversation_id: currentMessage.conversation_id,
+        previous_content: currentMessage.content,
+      });
+    
+    if (historyError) {
+      console.error('[evolution-webhook] Error saving edit history:', historyError);
+    }
+    
+    // 3. Update message
+    const { error: updateError } = await supabase
+      .from('whatsapp_messages')
+      .update({
+        content: newContent,
+        edited_at: new Date().toISOString(),
+        // Store original content only on first edit
+        original_content: currentMessage.original_content || currentMessage.content,
+      })
+      .eq('message_id', messageId);
+    
+    if (updateError) {
+      console.error('[evolution-webhook] Error updating message:', updateError);
+    } else {
+      console.log('[evolution-webhook] Message edited successfully:', messageId);
+    }
+  } catch (error) {
+    console.error('[evolution-webhook] Error in processMessageEdit:', error);
+  }
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -735,7 +802,12 @@ Deno.serve(async (req) => {
     // Route to appropriate handler
     switch (payload.event) {
       case 'messages.upsert':
-        await processMessageUpsert(payload, supabase);
+        // Check if it's an edited message
+        if (isEditedMessage(payload.data?.message)) {
+          await processMessageEdit(payload, supabase);
+        } else {
+          await processMessageUpsert(payload, supabase);
+        }
         break;
       case 'messages.update':
         await processMessageUpdate(payload, supabase);

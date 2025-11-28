@@ -36,7 +36,7 @@ export const useWhatsAppMessages = (conversationId: string | null) => {
     }
   }, [conversationId]);
 
-  // Realtime subscription for new messages
+  // Realtime subscription for new and edited messages
   useEffect(() => {
     if (!conversationId) return;
 
@@ -52,6 +52,18 @@ export const useWhatsAppMessages = (conversationId: string | null) => {
           const exists = old.some(msg => msg.id === payload.new.id);
           if (exists) return old;
           return [...old, payload.new as Message];
+        });
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'whatsapp_messages',
+        filter: `conversation_id=eq.${conversationId}`
+      }, (payload) => {
+        queryClient.setQueryData(['whatsapp', 'messages', conversationId], (old: Message[] = []) => {
+          return old.map(msg => 
+            msg.id === payload.new.id ? { ...msg, ...payload.new as Message } : msg
+          );
         });
       })
       .subscribe();
