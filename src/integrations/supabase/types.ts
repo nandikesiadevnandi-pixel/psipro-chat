@@ -662,6 +662,42 @@ export type Database = {
           },
         ]
       }
+      whatsapp_topics_history: {
+        Row: {
+          ai_confidence: number | null
+          ai_reasoning: string | null
+          categorization_model: string | null
+          contact_id: string
+          conversation_id: string
+          created_at: string
+          id: string
+          primary_topic: string | null
+          topics: string[]
+        }
+        Insert: {
+          ai_confidence?: number | null
+          ai_reasoning?: string | null
+          categorization_model?: string | null
+          contact_id: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          primary_topic?: string | null
+          topics: string[]
+        }
+        Update: {
+          ai_confidence?: number | null
+          ai_reasoning?: string | null
+          categorization_model?: string | null
+          contact_id?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          primary_topic?: string | null
+          topics?: string[]
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
