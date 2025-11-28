@@ -16,11 +16,11 @@ const WhatsApp = () => {
   const { instances } = useWhatsAppInstances();
   const isMobile = useIsMobile();
 
-  // Use first instance by default
-  const instanceId = instances[0]?.id || "";
+  // Show all conversations from all instances by default
+  const [selectedInstanceId, setSelectedInstanceId] = useState<string | undefined>(undefined);
 
   // Fetch conversations to get contact name
-  const { conversations } = useWhatsAppConversations({ instanceId });
+  const { conversations } = useWhatsAppConversations({ instanceId: selectedInstanceId });
   const selectedConv = conversations.find(c => c.id === selectedConversation);
 
   // Inform NotificationContext about open conversation
@@ -44,12 +44,12 @@ const WhatsApp = () => {
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
       {/* Sidebar */}
-      {showSidebar && instanceId && (
+      {showSidebar && (
         <div className={`${isMobile ? "w-full" : isConversationsSidebarCollapsed ? "w-14" : "w-[350px]"} border-r border-border`}>
           <ConversationsSidebar
             selectedId={selectedConversation}
             onSelect={handleSelectConversation}
-            instanceId={instanceId}
+            instanceId={selectedInstanceId}
             isCollapsed={!isMobile && isConversationsSidebarCollapsed}
             onToggleCollapse={() => setIsConversationsSidebarCollapsed(!isConversationsSidebarCollapsed)}
           />
@@ -83,7 +83,7 @@ const WhatsApp = () => {
       )}
 
       {/* No instance state */}
-      {!instanceId && (
+      {instances.length === 0 && !selectedConversation && (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center space-y-4">
             <p className="text-muted-foreground">Nenhuma instância configurada</p>
