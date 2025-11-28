@@ -75,9 +75,12 @@ export const useWhatsAppInstances = () => {
         'test-instance-connection',
         { body: { instanceId: id } }
       );
-
       if (error) throw error;
       return data;
+    },
+    onSuccess: () => {
+      // Invalidate to fetch updated status
+      queryClient.invalidateQueries({ queryKey: ['whatsapp', 'instances'] });
     },
   });
 
