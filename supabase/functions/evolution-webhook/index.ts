@@ -517,12 +517,24 @@ async function processMessageUpsert(payload: EvolutionWebhookPayload, supabase: 
     // Get instance data
     const { data: instanceData, error: instanceError } = await supabase
       .from('whatsapp_instances')
-      .select('id, api_url, api_key, instance_name')
+      .select('id, instance_name')
       .eq('instance_name', instance)
       .maybeSingle();
 
     if (instanceError || !instanceData) {
       console.error('[evolution-webhook] Instance not found:', instance);
+      return;
+    }
+    
+    // Get instance secrets
+    const { data: secrets, error: secretsError } = await supabase
+      .from('whatsapp_instance_secrets')
+      .select('api_url, api_key')
+      .eq('instance_id', instanceData.id)
+      .single();
+
+    if (secretsError || !secrets) {
+      console.error('[evolution-webhook] Failed to fetch instance secrets:', secretsError);
       return;
     }
 
@@ -580,8 +592,8 @@ async function processMessageUpsert(payload: EvolutionWebhookPayload, supabase: 
         mediaMimetype = mediaMessage.mimetype || `${messageType}/*`;
         if (mediaMimetype) {
           mediaUrl = await downloadAndUploadMedia(
-            instanceData.api_url,
-            instanceData.api_key,
+            secrets.api_url,
+            secrets.api_key,
             instanceData.instance_name,
             key,
             supabase,

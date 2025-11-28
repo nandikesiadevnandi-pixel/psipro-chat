@@ -37,39 +37,54 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get message with conversation and instance details
+    // Get conversation and instance details
+    const { data: conversation, error: convError } = await supabase
+      .from('whatsapp_conversations')
+      .select(`
+        *,
+        whatsapp_contacts!inner (phone_number),
+        whatsapp_instances!inner (id, instance_name)
+      `)
+      .eq('id', body.conversationId)
+      .single();
+
+    if (convError || !conversation) {
+      console.error('[edit-message] Conversation not found:', convError);
+      return new Response(JSON.stringify({ success: false, error: 'Conversation not found' }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Fetch instance secrets
+    const { data: secrets, error: secretsError } = await supabase
+      .from('whatsapp_instance_secrets')
+      .select('api_url, api_key')
+      .eq('instance_id', (conversation as any).whatsapp_instances.id)
+      .single();
+
+    if (secretsError || !secrets) {
+      console.error('[edit-message] Failed to fetch instance secrets:', secretsError);
+      return new Response(JSON.stringify({ success: false, error: 'Instance secrets not found' }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Get message details
     const { data: message, error: msgError } = await supabase
       .from('whatsapp_messages')
-      .select(`
-        id,
-        message_id,
-        conversation_id,
-        content,
-        original_content,
-        remote_jid,
-        timestamp,
-        is_from_me,
-        whatsapp_conversations!inner (
-          id,
-          instance_id,
-          whatsapp_instances!inner (
-            id,
-            api_url,
-            api_key,
-            instance_name
-          )
-        )
-      `)
+      .select('*')
       .eq('message_id', body.messageId)
       .eq('conversation_id', body.conversationId)
       .single();
 
     if (msgError || !message) {
-      console.error('[edit-whatsapp-message] Message not found:', msgError);
-      return new Response(
-        JSON.stringify({ success: false, error: 'Mensagem não encontrada' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      console.error('[edit-message] Message not found:', msgError);
+      return new Response(JSON.stringify({ success: false, error: 'Mensagem não encontrada' }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     // Check if message is from the user
@@ -92,16 +107,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    const conversation = (message as any).whatsapp_conversations;
-    const instance = conversation.whatsapp_instances;
-
-    console.log('[edit-whatsapp-message] Editing message via Evolution API');
+    console.log('[edit-message] Editing message via Evolution API');
 
     // Build Evolution API request
-    let baseUrl = instance.api_url.endsWith('/') ? instance.api_url.slice(0, -1) : instance.api_url;
+    let baseUrl = secrets.api_url.endsWith('/') ? secrets.api_url.slice(0, -1) : secrets.api_url;
     baseUrl = baseUrl.replace(/\/manager$/, '');
 
-    const endpoint = `${baseUrl}/chat/updateMessage/${instance.instance_name}`;
+    const endpoint = `${baseUrl}/chat/updateMessage/${(conversation as any).whatsapp_instances.instance_name}`;
     
     // Extract phone number from remote_jid
     const phoneNumber = message.remote_jid.replace(/@.*$/, '');
@@ -123,7 +135,7 @@ Deno.serve(async (req) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'apikey': instance.api_key,
+        'apikey': secrets.api_key,
       },
       body: JSON.stringify(requestBody),
     });

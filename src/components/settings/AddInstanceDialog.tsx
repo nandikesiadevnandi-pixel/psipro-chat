@@ -97,11 +97,10 @@ export const AddInstanceDialog = ({ open, onOpenChange }: AddInstanceDialogProps
 
   const onSubmit = async (values: FormValues) => {
     try {
+      // Create instance (api_url and api_key go to whatsapp_instance_secrets via trigger)
       const result = await createInstance.mutateAsync({
         name: values.name,
         instance_name: values.instance_name,
-        api_url: values.api_url,
-        api_key: values.api_key,
       });
       setCreatedInstanceId(result.id);
       setShowWebhookInstructions(true);

@@ -71,17 +71,12 @@ export const useWhatsAppInstances = () => {
 
   const testConnection = useMutation({
     mutationFn: async (id: string) => {
-      const instance = instances.find(i => i.id === id);
-      if (!instance) throw new Error('Instance not found');
+      const { data, error } = await supabase.functions.invoke(
+        'test-instance-connection',
+        { body: { instanceId: id } }
+      );
 
-      const response = await fetch(`${instance.api_url}/instance/connectionState/${instance.instance_name}`, {
-        headers: {
-          'apikey': instance.api_key,
-        },
-      });
-
-      if (!response.ok) throw new Error('Connection test failed');
-      const data = await response.json();
+      if (error) throw error;
       return data;
     },
   });

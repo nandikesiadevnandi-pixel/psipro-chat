@@ -92,10 +92,6 @@ export const InstanceCard = ({ instance }: InstanceCardProps) => {
             <span className="text-muted-foreground">Status:</span>{" "}
             <span className="font-medium">{getStatusText()}</span>
           </div>
-          <div className="text-sm">
-            <span className="text-muted-foreground">URL:</span>{" "}
-            <span className="font-mono text-xs break-all">{instance.api_url}</span>
-          </div>
           <div className="text-sm text-muted-foreground">
             Criado em {new Date(instance.created_at).toLocaleDateString("pt-BR")}
           </div>

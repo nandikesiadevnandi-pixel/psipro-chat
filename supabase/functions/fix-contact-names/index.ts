@@ -30,20 +30,51 @@ interface FixResult {
 }
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+
+    // Extract user from JWT token
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Verify admin role
+    const { data: isAdmin } = await supabaseAdmin.rpc('has_role', {
+      _user_id: user.id,
+      _role: 'admin'
+    });
+
+    if (!isAdmin) {
+      return new Response(JSON.stringify({ error: 'Forbidden - Admin required' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
 
     console.log('[fix-contact-names] Starting contact name correction process');
 
-    // 1. Find all contacts where name equals phone number (needs correction)
-    const { data: allContacts, error: fetchError } = await supabase
+    // Fetch all affected contacts
+    const { data: allContacts, error: fetchError } = await supabaseAdmin
       .from('whatsapp_contacts')
       .select('id, phone_number, name, instance_id');
     
@@ -80,20 +111,20 @@ Deno.serve(async (req) => {
     let successCount = 0;
     let failedCount = 0;
 
-    // 2. Process each contact
+    // Process each contact
     for (const contact of contactsToFix) {
-      console.log(`[fix-contact-names] Processing contact: ${contact.phone_number} (${contact.name})`);
-      
       try {
+        console.log(`[fix-contact-names] Processing contact ${contact.id} - ${contact.phone_number}`);
+        
         // Get instance details
-        const { data: instance, error: instanceError } = await supabase
+        const { data: instance, error: instanceError } = await supabaseAdmin
           .from('whatsapp_instances')
-          .select('id, api_url, api_key, instance_name')
+          .select('id, instance_name')
           .eq('id', contact.instance_id)
           .single();
 
         if (instanceError || !instance) {
-          console.error('[fix-contact-names] Error fetching instance:', instanceError);
+          console.error(`[fix-contact-names] No instance found for ${contact.instance_id}`);
           results.push({
             contactId: contact.id,
             phoneNumber: contact.phone_number,
@@ -104,16 +135,36 @@ Deno.serve(async (req) => {
           failedCount++;
           continue;
         }
+        
+        // Fetch instance secrets
+        const { data: secrets } = await supabaseAdmin
+          .from('whatsapp_instance_secrets')
+          .select('api_url, api_key')
+          .eq('instance_id', instance.id)
+          .single();
+
+        if (!secrets) {
+          console.error(`[fix-contact-names] No secrets found for instance ${instance.id}`);
+          results.push({
+            contactId: contact.id,
+            phoneNumber: contact.phone_number,
+            oldName: contact.name,
+            success: false,
+            error: 'Instance secrets not found'
+          });
+          failedCount++;
+          continue;
+        }
 
         // Call Evolution API to fetch profile
-        const fetchProfileUrl = `${instance.api_url}/chat/fetchProfile/${instance.instance_name}`;
+        const fetchProfileUrl = `${secrets.api_url}/chat/fetchProfile/${instance.instance_name}`;
         console.log(`[fix-contact-names] Fetching profile from: ${fetchProfileUrl}`);
 
         const profileResponse = await fetch(fetchProfileUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'apikey': instance.api_key,
+            'apikey': secrets.api_key,
           },
           body: JSON.stringify({
             number: contact.phone_number
@@ -151,7 +202,7 @@ Deno.serve(async (req) => {
           updateData.profile_picture_url = profilePictureUrl;
         }
 
-        const { error: updateError } = await supabase
+        const { error: updateError } = await supabaseAdmin
           .from('whatsapp_contacts')
           .update(updateData)
           .eq('id', contact.id);
