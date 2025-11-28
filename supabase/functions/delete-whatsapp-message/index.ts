@@ -61,11 +61,9 @@ Deno.serve(async (req) => {
 
     const endpoint = `${baseUrl}/chat/deleteMessageForEveryone/${instance.instance_name}`;
     const requestBody = {
-      key: {
-        remoteJid: message.remote_jid,
-        fromMe: true,
-        id: messageId,
-      },
+      id: messageId,
+      fromMe: true,
+      remoteJid: message.remote_jid,
     };
 
     console.log('[delete-whatsapp-message] Evolution API endpoint:', endpoint);
