@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { MessageSquare, Clock, CheckCircle2, Archive, Timer, ArrowLeft } from 'lucide-react';
+import { MessageSquare, Clock, CheckCircle2, Archive, Timer, ArrowLeft, Zap, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
   MetricCard, 
@@ -9,7 +9,9 @@ import {
   LongestConversationsTable, 
   ReportToolbar,
   MetricsGridSkeleton,
-  ChartsGridSkeleton 
+  ChartsGridSkeleton,
+  AgentFilter,
+  AgentPerformanceChart
 } from '@/components/reports';
 import { TopicsDistributionChart } from '@/components/chat/topics/TopicsDistributionChart';
 import { InstanceFilter } from '@/components/conversations/InstanceFilter';
@@ -27,6 +29,7 @@ export default function WhatsAppRelatorio() {
   const [selectedPeriod, setSelectedPeriod] = useState<FilterPeriod>('last30days');
   const [customRange, setCustomRange] = useState<{ from: Date; to: Date } | null>(null);
   const [selectedInstance, setSelectedInstance] = useState<string | null>(null);
+  const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
 
   const dateRange = useMemo(() => {
     const now = new Date();
@@ -66,7 +69,8 @@ export default function WhatsAppRelatorio() {
 
   const { data: metrics, isLoading } = useWhatsAppMetrics({ 
     dateRange,
-    instanceId: selectedInstance 
+    instanceId: selectedInstance,
+    agentId: selectedAgent
   });
 
   // Prepare data for export
@@ -114,6 +118,10 @@ export default function WhatsAppRelatorio() {
             <InstanceFilter
               selectedInstance={selectedInstance}
               onInstanceChange={setSelectedInstance}
+            />
+            <AgentFilter
+              selectedAgent={selectedAgent}
+              onAgentChange={setSelectedAgent}
             />
           </div>
         }
@@ -187,6 +195,32 @@ export default function WhatsAppRelatorio() {
               />
             </div>
 
+            {/* Secondary Metrics */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <MetricCard
+                title="Taxa de Resolução"
+                value={`${(metrics?.resolutionRate || 0).toFixed(1)}%`}
+                icon={TrendingUp}
+                trend={{
+                  value: metrics?.previousPeriod 
+                    ? (metrics.resolutionRate - metrics.previousPeriod.resolutionRate)
+                    : 0,
+                  isPercentage: false
+                }}
+              />
+              <MetricCard
+                title="Tempo de 1ª Resposta"
+                value={formatDuration(metrics?.avgFirstResponseTimeMinutes || 0)}
+                icon={Zap}
+                trend={{
+                  value: metrics?.previousPeriod && metrics.previousPeriod.avgFirstResponseTimeMinutes > 0
+                    ? ((metrics.avgFirstResponseTimeMinutes - metrics.previousPeriod.avgFirstResponseTimeMinutes) / metrics.previousPeriod.avgFirstResponseTimeMinutes) * 100
+                    : 0,
+                  isPercentage: true
+                }}
+              />
+            </div>
+
             {/* Charts Grid */}
             <div className="grid gap-6 md:grid-cols-2">
               {/* Evolution Chart */}
@@ -222,6 +256,9 @@ export default function WhatsAppRelatorio() {
               {/* Topics Distribution Chart */}
               <TopicsDistributionChart data={metrics?.topicsDistribution || []} />
             </div>
+
+            {/* Agent Performance Chart */}
+            <AgentPerformanceChart data={metrics?.agentPerformance || []} />
 
             {/* Longest Conversations Table */}
             <LongestConversationsTable conversations={metrics?.longestConversations || []} />

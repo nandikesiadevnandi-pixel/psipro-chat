@@ -6,3 +6,5 @@ export { LongestConversationsTable } from './LongestConversationsTable';
 export { ReportToolbar } from './ReportToolbar';
 export { MetricsGridSkeleton } from './MetricsGridSkeleton';
 export { ChartsGridSkeleton } from './ChartsGridSkeleton';
+export { AgentFilter } from './AgentFilter';
+export { AgentPerformanceChart } from './AgentPerformanceChart';
