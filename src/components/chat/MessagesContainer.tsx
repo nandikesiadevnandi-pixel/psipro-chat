@@ -14,9 +14,10 @@ interface MessagesContainerProps {
   messages: Message[];
   isLoading: boolean;
   conversationId: string | null;
+  onReplyMessage?: (message: Message) => void;
 }
 
-export const MessagesContainer = ({ messages, isLoading, conversationId }: MessagesContainerProps) => {
+export const MessagesContainer = ({ messages, isLoading, conversationId, onReplyMessage }: MessagesContainerProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [newMessagesCount, setNewMessagesCount] = useState(0);
@@ -108,6 +109,7 @@ export const MessagesContainer = ({ messages, isLoading, conversationId }: Messa
                     key={message.id} 
                     message={message}
                     reactions={reactionsByMessage[message.message_id]}
+                    onReply={onReplyMessage}
                   />
                 ))}
               </div>

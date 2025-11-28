@@ -8,8 +8,12 @@ import { AIComposerButton } from "./AIComposerButton";
 import { AudioRecorder } from "./AudioRecorder";
 import { MacroSuggestions } from "./MacroSuggestions";
 import { SmartReplySuggestions } from "./SmartReplySuggestions";
+import { ReplyPreview } from "./ReplyPreview";
 import { useWhatsAppMacros } from "@/hooks/whatsapp/useWhatsAppMacros";
 import { useSmartReply } from "@/hooks/whatsapp/useSmartReply";
+import { Tables } from "@/integrations/supabase/types";
+
+type Message = Tables<'whatsapp_messages'>;
 
 export interface MediaSendParams {
   messageType: 'text' | 'image' | 'audio' | 'video' | 'document';
@@ -23,15 +27,19 @@ export interface MediaSendParams {
 interface MessageInputContainerProps {
   conversationId: string;
   disabled?: boolean;
-  onSendText: (content: string) => void;
+  replyingTo?: Message | null;
+  onSendText: (content: string, quotedMessageId?: string) => void;
   onSendMedia: (params: MediaSendParams) => void;
+  onCancelReply?: () => void;
 }
 
 export const MessageInputContainer = ({ 
   conversationId, 
-  disabled, 
+  disabled,
+  replyingTo,
   onSendText, 
-  onSendMedia 
+  onSendMedia,
+  onCancelReply
 }: MessageInputContainerProps) => {
   const [message, setMessage] = useState("");
   const [isRecording, setIsRecording] = useState(false);
@@ -61,8 +69,9 @@ export const MessageInputContainer = ({
 
   const handleSend = () => {
     if (message.trim() && !disabled) {
-      onSendText(message.trim());
+      onSendText(message.trim(), replyingTo?.message_id);
       setMessage("");
+      onCancelReply?.();
     }
   };
 
@@ -125,6 +134,10 @@ export const MessageInputContainer = ({
 
   return (
     <div className="border-t border-border bg-card">
+      {replyingTo && onCancelReply && (
+        <ReplyPreview message={replyingTo} onCancel={onCancelReply} />
+      )}
+      
       <SmartReplySuggestions
         suggestions={suggestions}
         isLoading={isLoadingSmartReplies}
