@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
 import { MessageSquare, Clock, CheckCircle2, Archive, Timer, ArrowLeft, Zap, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useInstanceStatusMonitor } from '@/hooks/useInstanceStatusMonitor';
+import { DisconnectedInstancesBanner } from '@/components/notifications/DisconnectedInstancesBanner';
 import { 
   MetricCard, 
   DateRangeFilter, 
@@ -30,6 +32,7 @@ export default function WhatsAppRelatorio() {
   const [customRange, setCustomRange] = useState<{ from: Date; to: Date } | null>(null);
   const [selectedInstance, setSelectedInstance] = useState<string | null>(null);
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
+  const { disconnectedInstances } = useInstanceStatusMonitor();
 
   const dateRange = useMemo(() => {
     const now = new Date();
@@ -87,7 +90,11 @@ export default function WhatsAppRelatorio() {
   }, [metrics]);
 
   return (
-    <div className="min-h-screen bg-background p-6 space-y-6">
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Disconnected Instances Banner */}
+      <DisconnectedInstancesBanner instances={disconnectedInstances} />
+      
+      <div className="flex-1 p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -264,6 +271,7 @@ export default function WhatsAppRelatorio() {
             <LongestConversationsTable conversations={metrics?.longestConversations || []} />
           </>
         )}
+      </div>
       </div>
     </div>
   );
