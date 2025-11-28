@@ -55,8 +55,8 @@ export const EditInstanceDialog = ({
     defaultValues: {
       name: instance.name,
       instance_name: instance.instance_name,
-      api_url: instance.api_url,
-      api_key: instance.api_key,
+      api_url: '',
+      api_key: '',
     },
   });
 
@@ -65,8 +65,8 @@ export const EditInstanceDialog = ({
     form.reset({
       name: instance.name,
       instance_name: instance.instance_name,
-      api_url: instance.api_url,
-      api_key: instance.api_key,
+      api_url: '',
+      api_key: '',
     });
   }, [instance, form]);
 

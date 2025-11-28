@@ -56,22 +56,17 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get conversation with contact and instance
+    // Get conversation details including instance info
     const { data: conversation, error: convError } = await supabase
       .from('whatsapp_conversations')
       .select(`
-        id,
-        contact_id,
-        instance_id,
+        *,
         whatsapp_contacts!inner (
-          id,
           phone_number,
           name
         ),
         whatsapp_instances!inner (
           id,
-          api_url,
-          api_key,
           instance_name
         )
       `)
@@ -79,15 +74,30 @@ Deno.serve(async (req) => {
       .single();
 
     if (convError || !conversation) {
-      console.error('[send-whatsapp-message] Conversation not found:', convError);
-      return new Response(
-        JSON.stringify({ success: false, error: 'Conversation not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      console.error('[send] Conversation not found:', convError);
+      return new Response(JSON.stringify({ error: 'Conversation not found' }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
+    // Fetch instance secrets
+    const { data: secrets, error: secretsError } = await supabase
+      .from('whatsapp_instance_secrets')
+      .select('api_url, api_key')
+      .eq('instance_id', (conversation as any).whatsapp_instances.id)
+      .single();
+
+    if (secretsError || !secrets) {
+      console.error('[send] Failed to fetch instance secrets:', secretsError);
+      return new Response(JSON.stringify({ error: 'Instance secrets not found' }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const instanceName = (conversation as any).whatsapp_instances.instance_name;
     const contact = (conversation as any).whatsapp_contacts;
-    const instance = (conversation as any).whatsapp_instances;
 
     console.log('[send-whatsapp-message] Sending to:', contact.phone_number);
 
@@ -96,8 +106,8 @@ Deno.serve(async (req) => {
 
     // Build request for Evolution API
     const { endpoint, requestBody } = buildEvolutionRequest(
-      instance.api_url,
-      instance.instance_name,
+      secrets.api_url,
+      instanceName,
       destinationNumber,
       body
     );
@@ -109,7 +119,7 @@ Deno.serve(async (req) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'apikey': instance.api_key,
+        'apikey': secrets.api_key,
       },
       body: JSON.stringify(requestBody),
     });

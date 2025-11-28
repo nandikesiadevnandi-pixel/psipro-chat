@@ -1,31 +1,36 @@
 project_id = "vxkzxbfglexxjlphbeav"
 
+# Webhook externo - manter sem JWT
 [functions.evolution-webhook]
 verify_jwt = false
 
+# Todas as outras funções - habilitar JWT
 [functions.send-whatsapp-message]
-verify_jwt = false
+verify_jwt = true
 
 [functions.edit-whatsapp-message]
-verify_jwt = false
+verify_jwt = true
 
 [functions.analyze-whatsapp-sentiment]
-verify_jwt = false
+verify_jwt = true
 
 [functions.suggest-smart-replies]
-verify_jwt = false
+verify_jwt = true
 
 [functions.compose-whatsapp-message]
-verify_jwt = false
+verify_jwt = true
 
 [functions.generate-conversation-summary]
-verify_jwt = false
+verify_jwt = true
 
 [functions.categorize-whatsapp-conversation]
-verify_jwt = false
+verify_jwt = true
 
 [functions.fix-contact-names]
-verify_jwt = false
+verify_jwt = true
 
 [functions.invite-team-member]
-verify_jwt = false
+verify_jwt = true
+
+[functions.test-instance-connection]
+verify_jwt = true

@@ -374,10 +374,43 @@ export type Database = {
           },
         ]
       }
-      whatsapp_instances: {
+      whatsapp_instance_secrets: {
         Row: {
           api_key: string
           api_url: string
+          created_at: string | null
+          id: string
+          instance_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          api_key: string
+          api_url: string
+          created_at?: string | null
+          id?: string
+          instance_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          api_key?: string
+          api_url?: string
+          created_at?: string | null
+          id?: string
+          instance_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_instance_secrets_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: true
+            referencedRelation: "whatsapp_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_instances: {
+        Row: {
           created_at: string
           id: string
           instance_name: string
@@ -388,8 +421,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          api_key: string
-          api_url: string
           created_at?: string
           id?: string
           instance_name: string
@@ -400,8 +431,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          api_key?: string
-          api_url?: string
           created_at?: string
           id?: string
           instance_name?: string
@@ -744,6 +773,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_conversation: {
+        Args: { _conversation_id: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
