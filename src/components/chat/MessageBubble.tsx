@@ -169,7 +169,10 @@ export const MessageBubble = ({ message, reactions = [], onReply }: MessageBubbl
     >
       <div className="max-w-[70%] relative">
         {isHovered && (
-          <>
+          <div className={cn(
+            "absolute top-1/2 -translate-y-1/2 flex items-center gap-1 z-10",
+            isFromMe ? "left-0 -translate-x-full -ml-1" : "right-0 translate-x-full ml-1"
+          )}>
             <MessageReactionButton
               messageId={message.message_id}
               conversationId={message.conversation_id}
@@ -181,15 +184,12 @@ export const MessageBubble = ({ message, reactions = [], onReply }: MessageBubbl
                 size="icon"
                 variant="ghost"
                 onClick={() => onReply(message)}
-                className={cn(
-                  "absolute top-0 h-8 w-8 rounded-full bg-background/90 shadow-md hover:bg-accent z-10",
-                  isFromMe ? "left-0 -translate-x-full -ml-2" : "right-0 translate-x-full mr-2"
-                )}
+                className="h-8 w-8 rounded-full bg-background/95 backdrop-blur-sm border border-border shadow-sm hover:bg-accent"
               >
                 <Reply className="h-4 w-4" />
               </Button>
             )}
-          </>
+          </div>
         )}
         <Card
           className={cn(

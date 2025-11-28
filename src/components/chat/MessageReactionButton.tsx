@@ -41,10 +41,7 @@ export const MessageReactionButton = ({
         <Button 
           size="icon" 
           variant="ghost"
-          className={cn(
-            "h-8 w-8 rounded-full bg-background/95 backdrop-blur-sm border border-border shadow-sm hover:bg-accent opacity-0 group-hover:opacity-100 transition-opacity absolute top-1/2 -translate-y-1/2 z-10",
-            isFromMe ? "-left-10" : "-right-10"
-          )}
+          className="h-8 w-8 rounded-full bg-background/95 backdrop-blur-sm border border-border shadow-sm hover:bg-accent"
         >
           <Smile className="h-4 w-4" />
         </Button>
