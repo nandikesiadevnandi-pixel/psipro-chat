@@ -2,12 +2,13 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Tables } from "@/integrations/supabase/types";
 import { format } from "date-fns";
-import { Check, CheckCheck, Clock } from "lucide-react";
+import { Check, CheckCheck, Clock, Reply } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { QuotedMessagePreview } from "./QuotedMessagePreview";
 import { ImageViewerModal } from "./ImageViewerModal";
 import { MessageReactionButton } from "./MessageReactionButton";
 import { useMessageReaction } from "@/hooks/whatsapp/useMessageReaction";
+import { Button } from "@/components/ui/button";
 
 type Message = Tables<'whatsapp_messages'>;
 type Reaction = Tables<'whatsapp_reactions'>;
@@ -15,9 +16,10 @@ type Reaction = Tables<'whatsapp_reactions'>;
 interface MessageBubbleProps {
   message: Message;
   reactions?: Reaction[];
+  onReply?: (message: Message) => void;
 }
 
-export const MessageBubble = ({ message, reactions = [] }: MessageBubbleProps) => {
+export const MessageBubble = ({ message, reactions = [], onReply }: MessageBubbleProps) => {
   const [viewerImage, setViewerImage] = useState<string | null>(null);
   const [isHovered, setIsHovered] = useState(false);
   const isFromMe = message.is_from_me;
@@ -165,12 +167,27 @@ export const MessageBubble = ({ message, reactions = [] }: MessageBubbleProps) =
     >
       <div className="max-w-[70%] relative">
         {isHovered && (
-          <MessageReactionButton
-            messageId={message.message_id}
-            conversationId={message.conversation_id}
-            onReact={handleReact}
-            isFromMe={isFromMe}
-          />
+          <>
+            <MessageReactionButton
+              messageId={message.message_id}
+              conversationId={message.conversation_id}
+              onReact={handleReact}
+              isFromMe={isFromMe}
+            />
+            {onReply && (
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => onReply(message)}
+                className={cn(
+                  "absolute top-0 h-8 w-8 rounded-full bg-background/90 shadow-md hover:bg-accent z-10",
+                  isFromMe ? "left-0 -translate-x-full -ml-2" : "right-0 translate-x-full mr-2"
+                )}
+              >
+                <Reply className="h-4 w-4" />
+              </Button>
+            )}
+          </>
         )}
         <Card
           className={cn(

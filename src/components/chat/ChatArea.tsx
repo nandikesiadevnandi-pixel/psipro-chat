@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useWhatsAppMessages, useWhatsAppSend, useWhatsAppSentiment } from "@/hooks/whatsapp";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -5,12 +6,16 @@ import { ChatHeader } from "./ChatHeader";
 import { MessagesContainer } from "./MessagesContainer";
 import { MessageInputContainer, MediaSendParams } from "./input";
 import { MessageCircle } from "lucide-react";
+import { Tables } from "@/integrations/supabase/types";
+
+type Message = Tables<'whatsapp_messages'>;
 
 interface ChatAreaProps {
   conversationId: string | null;
 }
 
 export const ChatArea = ({ conversationId }: ChatAreaProps) => {
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const { messages, isLoading: messagesLoading } = useWhatsAppMessages(conversationId);
   const { sentiment, isAnalyzing, analyze } = useWhatsAppSentiment(conversationId);
   const sendMutation = useWhatsAppSend();
@@ -43,14 +48,24 @@ export const ChatArea = ({ conversationId }: ChatAreaProps) => {
     queryClient.invalidateQueries({ queryKey: ['whatsapp', 'conversations'] });
   };
 
-  const handleSendText = (content: string) => {
+  const handleSendText = (content: string, quotedMessageId?: string) => {
     if (!conversationId || !content.trim()) return;
     
     sendMutation.mutate({
       conversationId,
       content,
       messageType: 'text',
+      quotedMessageId,
     });
+    setReplyingTo(null);
+  };
+
+  const handleReply = (message: Message) => {
+    setReplyingTo(message);
+  };
+
+  const handleCancelReply = () => {
+    setReplyingTo(null);
   };
 
   const handleSendMedia = (params: MediaSendParams) => {
@@ -94,12 +109,15 @@ export const ChatArea = ({ conversationId }: ChatAreaProps) => {
         messages={messages} 
         isLoading={messagesLoading}
         conversationId={conversationId}
+        onReplyMessage={handleReply}
       />
       
       <MessageInputContainer
         conversationId={conversationId}
+        replyingTo={replyingTo}
         onSendText={handleSendText}
         onSendMedia={handleSendMedia}
+        onCancelReply={handleCancelReply}
       />
     </div>
   );
