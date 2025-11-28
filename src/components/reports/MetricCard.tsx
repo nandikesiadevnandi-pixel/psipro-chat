@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LucideIcon } from 'lucide-react';
+import { LucideIcon, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ReactNode } from 'react';
 
@@ -9,9 +9,40 @@ interface MetricCardProps {
   icon?: LucideIcon;
   className?: string;
   children?: ReactNode;
+  trend?: {
+    value: number;
+    isPercentage?: boolean;
+  };
 }
 
-export function MetricCard({ title, value, icon: Icon, className, children }: MetricCardProps) {
+export function MetricCard({ title, value, icon: Icon, className, children, trend }: MetricCardProps) {
+  const getTrendDisplay = () => {
+    if (!trend) return null;
+
+    const isPositive = trend.value > 0;
+    const isNegative = trend.value < 0;
+    const isNeutral = trend.value === 0;
+
+    const TrendIcon = isPositive ? TrendingUp : isNegative ? TrendingDown : Minus;
+    const trendColor = isPositive 
+      ? 'text-success' 
+      : isNegative 
+        ? 'text-destructive' 
+        : 'text-muted-foreground';
+
+    const displayValue = trend.isPercentage 
+      ? `${Math.abs(trend.value).toFixed(1)}%`
+      : Math.abs(trend.value).toFixed(0);
+
+    return (
+      <div className={cn("flex items-center gap-1 text-xs font-medium", trendColor)}>
+        <TrendIcon className="h-3 w-3" />
+        <span>{displayValue}</span>
+        <span className="text-muted-foreground">vs período anterior</span>
+      </div>
+    );
+  };
+
   return (
     <Card className={cn("h-full", className)}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -20,6 +51,7 @@ export function MetricCard({ title, value, icon: Icon, className, children }: Me
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{value}</div>
+        {getTrendDisplay()}
         {children}
       </CardContent>
     </Card>
