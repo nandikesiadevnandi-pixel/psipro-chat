@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { InstancesList, AddInstanceDialog, TeamMembersList, AssignmentRulesManager } from "@/components/settings";
+import { InstancesList, AddInstanceDialog, TeamMembersList, AssignmentRulesManager, InstanceOnboardingGuide } from "@/components/settings";
 import { MacrosManager } from "@/components/macros";
 import { useAuth } from "@/contexts/AuthContext";
 
 const WhatsAppSettings = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const { isAdmin } = useAuth();
 
   return (
@@ -43,7 +44,14 @@ const WhatsAppSettings = () => {
           </TabsList>
 
           <TabsContent value="instances" className="space-y-4 mt-6">
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-2">
+              <Button 
+                variant="outline"
+                onClick={() => setShowOnboarding(true)}
+              >
+                <HelpCircle className="mr-2 h-4 w-4" />
+                Como configurar
+              </Button>
               <Button onClick={() => setShowAddDialog(true)}>
                 <Plus className="mr-2 h-4 w-4" />
                 Nova Instância
@@ -72,6 +80,13 @@ const WhatsAppSettings = () => {
       <AddInstanceDialog 
         open={showAddDialog} 
         onOpenChange={setShowAddDialog}
+      />
+
+      {/* Onboarding Guide */}
+      <InstanceOnboardingGuide
+        open={showOnboarding}
+        onOpenChange={setShowOnboarding}
+        onOpenAddDialog={() => setShowAddDialog(true)}
       />
     </div>
   );
