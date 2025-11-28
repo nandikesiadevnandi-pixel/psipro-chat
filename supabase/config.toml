@@ -34,3 +34,6 @@ verify_jwt = true
 
 [functions.test-instance-connection]
 verify_jwt = true
+
+[functions.sync-contact-profiles]
+verify_jwt = false
