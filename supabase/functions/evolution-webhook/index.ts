@@ -31,6 +31,7 @@ function normalizePhoneNumber(remoteJid: string): { phone: string; isGroup: bool
 
 // Detect message type from Evolution API message object
 function getMessageType(message: any): string {
+  if (message.reactionMessage) return 'reaction';
   if (message.conversation || message.extendedTextMessage) return 'text';
   if (message.imageMessage) return 'image';
   if (message.audioMessage) return 'audio';
@@ -430,6 +431,76 @@ async function checkAndTriggerAutoCategorization(
   }
 }
 
+// Process reaction message
+async function processReaction(payload: EvolutionWebhookPayload, supabase: any) {
+  try {
+    const { data } = payload;
+    const { key, message } = data;
+    const reaction = message.reactionMessage;
+    
+    if (!reaction?.key?.id) {
+      console.log('[evolution-webhook] Invalid reaction data');
+      return;
+    }
+    
+    const targetMessageId = reaction.key.id;
+    const emoji = reaction.text;
+    const reactorJid = key.remoteJid;
+    
+    console.log('[evolution-webhook] Processing reaction:', emoji || '(removed)', 'on message:', targetMessageId);
+    
+    // Find the target message to get conversation_id
+    const { data: targetMessage } = await supabase
+      .from('whatsapp_messages')
+      .select('conversation_id')
+      .eq('message_id', targetMessageId)
+      .maybeSingle();
+    
+    if (!targetMessage) {
+      console.log('[evolution-webhook] Target message not found:', targetMessageId);
+      return;
+    }
+    
+    // If emoji is empty, it's a reaction removal
+    if (!emoji || emoji === '') {
+      const { error } = await supabase
+        .from('whatsapp_reactions')
+        .delete()
+        .eq('message_id', targetMessageId)
+        .eq('reactor_jid', reactorJid);
+      
+      if (error) {
+        console.error('[evolution-webhook] Error removing reaction:', error);
+      } else {
+        console.log('[evolution-webhook] Reaction removed successfully');
+      }
+      return;
+    }
+    
+    // UPSERT: update if exists, insert if not
+    const { error } = await supabase
+      .from('whatsapp_reactions')
+      .upsert({
+        message_id: targetMessageId,
+        conversation_id: targetMessage.conversation_id,
+        emoji,
+        reactor_jid: reactorJid,
+        is_from_me: key.fromMe,
+      }, { 
+        onConflict: 'message_id,reactor_jid',
+        ignoreDuplicates: false 
+      });
+    
+    if (error) {
+      console.error('[evolution-webhook] Error saving reaction:', error);
+    } else {
+      console.log('[evolution-webhook] Reaction saved successfully');
+    }
+  } catch (error) {
+    console.error('[evolution-webhook] Error in processReaction:', error);
+  }
+}
+
 // Process message upsert event
 async function processMessageUpsert(payload: EvolutionWebhookPayload, supabase: any) {
   try {
@@ -484,6 +555,13 @@ async function processMessageUpsert(payload: EvolutionWebhookPayload, supabase: 
 
     // Detect message type and content
     const messageType = getMessageType(message);
+    
+    // If it's a reaction, process it separately
+    if (messageType === 'reaction') {
+      await processReaction(payload, supabase);
+      return;
+    }
+    
     const content = getMessageContent(message, messageType);
     console.log('[evolution-webhook] Message type:', messageType, 'Content preview:', content.substring(0, 50));
 
