@@ -4,6 +4,8 @@ import { ChatArea, ConversationDetailsSidebar } from "@/components/chat";
 import { useWhatsAppInstances, useWhatsAppConversations } from "@/hooks/whatsapp";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useInstanceStatusMonitor } from "@/hooks/useInstanceStatusMonitor";
+import { DisconnectedInstancesBanner } from "@/components/notifications/DisconnectedInstancesBanner";
 import { Button } from "@/components/ui/button";
 import { Settings, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -14,6 +16,7 @@ const WhatsApp = () => {
   const [isDetailsSidebarCollapsed, setIsDetailsSidebarCollapsed] = useState(false);
   const [isConversationsSidebarCollapsed, setIsConversationsSidebarCollapsed] = useState(false);
   const { instances } = useWhatsAppInstances();
+  const { disconnectedInstances } = useInstanceStatusMonitor();
   const isMobile = useIsMobile();
 
   // Show all conversations from all instances by default
@@ -42,7 +45,11 @@ const WhatsApp = () => {
   const showChat = !isMobile || selectedConversation;
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-background">
+    <div className="flex flex-col h-screen w-full overflow-hidden bg-background">
+      {/* Disconnected Instances Banner */}
+      <DisconnectedInstancesBanner instances={disconnectedInstances} />
+      
+      <div className="flex flex-1 overflow-hidden">
       {/* Sidebar */}
       {showSidebar && (
         <div className={`${isMobile ? "w-full" : isConversationsSidebarCollapsed ? "w-14" : "w-[350px]"} border-r border-border`}>
@@ -96,6 +103,7 @@ const WhatsApp = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };
