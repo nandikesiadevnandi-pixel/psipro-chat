@@ -3,7 +3,6 @@ import { MessageSquare, Clock, CheckCircle2, Archive, Timer, ArrowLeft, Zap, Tre
 import { Button } from '@/components/ui/button';
 import { useInstanceStatusMonitor } from '@/hooks/useInstanceStatusMonitor';
 import { DisconnectedInstancesBanner } from '@/components/notifications/DisconnectedInstancesBanner';
-import { SetupGuideModal, SetupGuideButton } from '@/components/setup';
 import { 
   MetricCard, 
   DateRangeFilter, 
@@ -33,7 +32,6 @@ export default function WhatsAppRelatorio() {
   const [customRange, setCustomRange] = useState<{ from: Date; to: Date } | null>(null);
   const [selectedInstance, setSelectedInstance] = useState<string | null>(null);
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
-  const [showSetupGuide, setShowSetupGuide] = useState(false);
   const { disconnectedInstances } = useInstanceStatusMonitor();
 
   const dateRange = useMemo(() => {
@@ -96,23 +94,17 @@ export default function WhatsAppRelatorio() {
       {/* Disconnected Instances Banner */}
       <DisconnectedInstancesBanner instances={disconnectedInstances} />
       
-      {/* Setup Guide Modal */}
-      <SetupGuideModal open={showSetupGuide} onOpenChange={setShowSetupGuide} />
-      
       <div className="flex-1 p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate('/whatsapp')}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-3xl font-bold">Relatório WhatsApp</h1>
-        </div>
-        <SetupGuideButton onClick={() => setShowSetupGuide(true)} />
+      <div className="flex items-center gap-4">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate('/whatsapp')}
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <h1 className="text-3xl font-bold">Relatório WhatsApp</h1>
       </div>
 
       {/* Filters Bar */}

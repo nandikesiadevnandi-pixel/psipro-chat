@@ -6,14 +6,12 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useInstanceStatusMonitor } from "@/hooks/useInstanceStatusMonitor";
 import { DisconnectedInstancesBanner } from "@/components/notifications/DisconnectedInstancesBanner";
-import { SetupGuideModal, SetupGuideButton } from "@/components/setup";
 import { Button } from "@/components/ui/button";
 import { Settings, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const WhatsApp = () => {
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
-  const [showSetupGuide, setShowSetupGuide] = useState(false);
   const { setSelectedConversationId } = useNotifications();
   const [isDetailsSidebarCollapsed, setIsDetailsSidebarCollapsed] = useState(false);
   const [isConversationsSidebarCollapsed, setIsConversationsSidebarCollapsed] = useState(false);
@@ -51,9 +49,6 @@ const WhatsApp = () => {
       {/* Disconnected Instances Banner */}
       <DisconnectedInstancesBanner instances={disconnectedInstances} />
       
-      {/* Setup Guide Modal */}
-      <SetupGuideModal open={showSetupGuide} onOpenChange={setShowSetupGuide} />
-      
       <div className="flex flex-1 overflow-hidden">
       {/* Sidebar */}
       {showSidebar && (
@@ -64,7 +59,6 @@ const WhatsApp = () => {
             instanceId={selectedInstanceId}
             isCollapsed={!isMobile && isConversationsSidebarCollapsed}
             onToggleCollapse={() => setIsConversationsSidebarCollapsed(!isConversationsSidebarCollapsed)}
-            onOpenSetupGuide={() => setShowSetupGuide(true)}
           />
         </div>
       )}

@@ -12,7 +12,6 @@ import NewConversationModal from "./NewConversationModal";
 import { ConversationFiltersPopover } from "./ConversationFiltersPopover";
 import { NotificationToggle } from "@/components/notifications/NotificationToggle";
 import { UserMenu } from "@/components/auth/UserMenu";
-import { SetupGuideButton } from "@/components/setup";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -22,12 +21,11 @@ interface ConversationsSidebarProps {
   instanceId?: string;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
-  onOpenSetupGuide?: () => void;
 }
 
 type FilterType = "all" | "unread" | "waiting" | "queue" | "mine";
 
-const ConversationsSidebar = ({ selectedId, onSelect, instanceId, isCollapsed, onToggleCollapse, onOpenSetupGuide }: ConversationsSidebarProps) => {
+const ConversationsSidebar = ({ selectedId, onSelect, instanceId, isCollapsed, onToggleCollapse }: ConversationsSidebarProps) => {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");
   const [sortBy, setSortBy] = useState<string>("recent");
@@ -199,7 +197,6 @@ const ConversationsSidebar = ({ selectedId, onSelect, instanceId, isCollapsed, o
         <div className="flex items-center justify-between mb-3">
           <h1 className="text-lg font-semibold">Conversas</h1>
           <div className="flex items-center gap-1">
-            {onOpenSetupGuide && <SetupGuideButton onClick={onOpenSetupGuide} />}
             <NotificationToggle />
             <Link to="/whatsapp/contatos">
               <Button variant="ghost" size="icon" title="Contatos">
