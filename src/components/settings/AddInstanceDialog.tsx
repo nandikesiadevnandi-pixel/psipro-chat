@@ -20,8 +20,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useWhatsAppInstances } from "@/hooks/whatsapp";
-import { Loader2, Check, Copy, Link as LinkIcon } from "lucide-react";
+import { Loader2, Check, Copy, Link as LinkIcon, Info } from "lucide-react";
 import { toast } from "sonner";
 
 const formSchema = z.object({
@@ -147,7 +148,17 @@ export const AddInstanceDialog = ({ open, onOpenChange }: AddInstanceDialogProps
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nome</FormLabel>
+                      <div className="flex items-center gap-1.5">
+                        <FormLabel>Nome</FormLabel>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent side="right" className="max-w-[250px]">
+                            <p>Nome para identificar a instância na plataforma (ex: 'WhatsApp Vendas', 'Suporte Técnico')</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
                       <FormControl>
                         <Input placeholder="Minha Instância" {...field} />
                       </FormControl>
@@ -161,7 +172,17 @@ export const AddInstanceDialog = ({ open, onOpenChange }: AddInstanceDialogProps
                   name="instance_name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nome da Instância</FormLabel>
+                      <div className="flex items-center gap-1.5">
+                        <FormLabel>Nome da Instância</FormLabel>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent side="right" className="max-w-[250px]">
+                            <p>Nome exato da instância configurada no Evolution API. Encontre no painel do Evolution em 'Instances'.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
                       <FormControl>
                         <Input placeholder="my-instance" {...field} />
                       </FormControl>
@@ -175,7 +196,17 @@ export const AddInstanceDialog = ({ open, onOpenChange }: AddInstanceDialogProps
                   name="api_url"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>URL da API</FormLabel>
+                      <div className="flex items-center gap-1.5">
+                        <FormLabel>URL da API</FormLabel>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent side="right" className="max-w-[250px]">
+                            <p>URL de acesso ao seu Evolution API. É a mesma URL que você usa no navegador para acessar o painel.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
                       <FormControl>
                         <Input placeholder="https://api.evolution.com" {...field} />
                       </FormControl>
@@ -189,7 +220,17 @@ export const AddInstanceDialog = ({ open, onOpenChange }: AddInstanceDialogProps
                   name="api_key"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>API Key</FormLabel>
+                      <div className="flex items-center gap-1.5">
+                        <FormLabel>API Key</FormLabel>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent side="right" className="max-w-[250px]">
+                            <p>Chave de autenticação da API. Se usa Cloudfy, encontre em 'Infraestrutura' no painel da ferramenta.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
                       <FormControl>
                         <Input type="password" placeholder="••••••••" {...field} />
                       </FormControl>
