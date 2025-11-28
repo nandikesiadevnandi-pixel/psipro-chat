@@ -6,6 +6,8 @@ import { Check, CheckCheck, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { QuotedMessagePreview } from "./QuotedMessagePreview";
 import { ImageViewerModal } from "./ImageViewerModal";
+import { MessageReactionButton } from "./MessageReactionButton";
+import { useMessageReaction } from "@/hooks/whatsapp/useMessageReaction";
 
 type Message = Tables<'whatsapp_messages'>;
 type Reaction = Tables<'whatsapp_reactions'>;
@@ -17,8 +19,20 @@ interface MessageBubbleProps {
 
 export const MessageBubble = ({ message, reactions = [] }: MessageBubbleProps) => {
   const [viewerImage, setViewerImage] = useState<string | null>(null);
+  const [isHovered, setIsHovered] = useState(false);
   const isFromMe = message.is_from_me;
   const time = format(new Date(message.timestamp), 'HH:mm');
+  const { sendReaction } = useMessageReaction();
+
+  const handleReact = (emoji: string) => {
+    sendReaction.mutate({
+      messageId: message.message_id,
+      conversationId: message.conversation_id,
+      emoji,
+      reactorJid: message.remote_jid,
+      isFromMe: true,
+    });
+  };
 
   const getStatusIcon = () => {
     if (!isFromMe) return null;
@@ -143,11 +157,21 @@ export const MessageBubble = ({ message, reactions = [] }: MessageBubbleProps) =
   return (
     <div
       className={cn(
-        'flex',
+        'flex group relative',
         isFromMe ? 'justify-end' : 'justify-start'
       )}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="max-w-[70%]">
+      <div className="max-w-[70%] relative">
+        {isHovered && (
+          <MessageReactionButton
+            messageId={message.message_id}
+            conversationId={message.conversation_id}
+            onReact={handleReact}
+            isFromMe={isFromMe}
+          />
+        )}
         <Card
           className={cn(
             'p-3 space-y-1',
