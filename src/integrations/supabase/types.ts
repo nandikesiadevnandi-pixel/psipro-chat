@@ -522,6 +522,44 @@ export type Database = {
           },
         ]
       }
+      whatsapp_reactions: {
+        Row: {
+          conversation_id: string
+          created_at: string | null
+          emoji: string
+          id: string
+          is_from_me: boolean | null
+          message_id: string
+          reactor_jid: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string | null
+          emoji: string
+          id?: string
+          is_from_me?: boolean | null
+          message_id: string
+          reactor_jid: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string | null
+          emoji?: string
+          id?: string
+          is_from_me?: boolean | null
+          message_id?: string
+          reactor_jid?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_reactions_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_sentiment_analysis: {
         Row: {
           confidence_score: number | null

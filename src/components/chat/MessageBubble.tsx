@@ -8,12 +8,14 @@ import { QuotedMessagePreview } from "./QuotedMessagePreview";
 import { ImageViewerModal } from "./ImageViewerModal";
 
 type Message = Tables<'whatsapp_messages'>;
+type Reaction = Tables<'whatsapp_reactions'>;
 
 interface MessageBubbleProps {
   message: Message;
+  reactions?: Reaction[];
 }
 
-export const MessageBubble = ({ message }: MessageBubbleProps) => {
+export const MessageBubble = ({ message, reactions = [] }: MessageBubbleProps) => {
   const [viewerImage, setViewerImage] = useState<string | null>(null);
   const isFromMe = message.is_from_me;
   const time = format(new Date(message.timestamp), 'HH:mm');
@@ -33,6 +35,30 @@ export const MessageBubble = ({ message }: MessageBubbleProps) => {
       default:
         return <Check className="w-3 h-3" />;
     }
+  };
+
+  const renderReactions = () => {
+    if (!reactions || reactions.length === 0) return null;
+    
+    // Group reactions by emoji and count
+    const grouped = reactions.reduce((acc, r) => {
+      acc[r.emoji] = (acc[r.emoji] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    return (
+      <div className="flex gap-1 flex-wrap mt-1">
+        {Object.entries(grouped).map(([emoji, count]) => (
+          <span 
+            key={emoji}
+            className="px-1.5 py-0.5 bg-muted rounded-full text-xs flex items-center gap-1 border border-border"
+          >
+            <span className="text-sm">{emoji}</span>
+            {count > 1 && <span className="text-muted-foreground font-medium">{count}</span>}
+          </span>
+        ))}
+      </div>
+    );
   };
 
   const renderContent = () => {
@@ -121,33 +147,37 @@ export const MessageBubble = ({ message }: MessageBubbleProps) => {
         isFromMe ? 'justify-end' : 'justify-start'
       )}
     >
-      <Card
-        className={cn(
-          'max-w-[70%] p-3 space-y-1',
-          message.message_type === 'sticker' && 'bg-transparent border-none shadow-none p-0',
-          isFromMe
-            ? 'bg-primary text-primary-foreground'
-            : 'bg-card text-card-foreground'
-        )}
-      >
-        {message.quoted_message_id && (
-          <QuotedMessagePreview messageId={message.quoted_message_id} />
-        )}
+      <div>
+        <Card
+          className={cn(
+            'max-w-[70%] p-3 space-y-1',
+            message.message_type === 'sticker' && 'bg-transparent border-none shadow-none p-0',
+            isFromMe
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-card text-card-foreground'
+          )}
+        >
+          {message.quoted_message_id && (
+            <QuotedMessagePreview messageId={message.quoted_message_id} />
+          )}
+          
+          {renderContent()}
+          
+          <div className="flex items-center justify-end gap-1 mt-1">
+            <span
+              className={cn(
+                'text-xs',
+                isFromMe ? 'text-primary-foreground/70' : 'text-muted-foreground'
+              )}
+            >
+              {time}
+            </span>
+            {getStatusIcon()}
+          </div>
+        </Card>
         
-        {renderContent()}
-        
-        <div className="flex items-center justify-end gap-1 mt-1">
-          <span
-            className={cn(
-              'text-xs',
-              isFromMe ? 'text-primary-foreground/70' : 'text-muted-foreground'
-            )}
-          >
-            {time}
-          </span>
-          {getStatusIcon()}
-        </div>
-      </Card>
+        {renderReactions()}
+      </div>
 
       <ImageViewerModal
         imageUrl={viewerImage}

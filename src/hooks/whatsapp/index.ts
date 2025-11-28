@@ -19,6 +19,7 @@ export { useWhatsAppContacts } from './useWhatsAppContacts';
 export { useContactDetails } from './useContactDetails';
 export { useConversationAssignment } from './useConversationAssignment';
 export { useAssignmentRules } from './useAssignmentRules';
+export { useMessageReactions } from './useMessageReactions';
 export type { AssignmentRule } from './useAssignmentRules';
 export type { SmartReplySuggestion, SmartReplyResponse } from './useSmartReply';
 export type { ContactSortOption, ContactWithMetrics, ContactsResult } from './useWhatsAppContacts';

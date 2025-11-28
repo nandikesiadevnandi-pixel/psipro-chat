@@ -90,7 +90,11 @@ export const ChatArea = ({ conversationId }: ChatAreaProps) => {
         onRefresh={handleRefresh}
       />
       
-      <MessagesContainer messages={messages} isLoading={messagesLoading} />
+      <MessagesContainer 
+        messages={messages} 
+        isLoading={messagesLoading}
+        conversationId={conversationId}
+      />
       
       <MessageInputContainer
         conversationId={conversationId}

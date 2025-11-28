@@ -6,19 +6,22 @@ import { format, isToday, isYesterday, isSameWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
+import { useMessageReactions } from "@/hooks/whatsapp";
 
 type Message = Tables<'whatsapp_messages'>;
 
 interface MessagesContainerProps {
   messages: Message[];
   isLoading: boolean;
+  conversationId: string | null;
 }
 
-export const MessagesContainer = ({ messages, isLoading }: MessagesContainerProps) => {
+export const MessagesContainer = ({ messages, isLoading, conversationId }: MessagesContainerProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [newMessagesCount, setNewMessagesCount] = useState(0);
   const prevMessagesLengthRef = useRef(messages.length);
+  const { reactionsByMessage } = useMessageReactions(conversationId);
 
   const handleScroll = () => {
     if (!scrollRef.current) return;
@@ -101,7 +104,11 @@ export const MessagesContainer = ({ messages, isLoading }: MessagesContainerProp
               
               <div className="space-y-2">
                 {group.messages.map((message) => (
-                  <MessageBubble key={message.id} message={message} />
+                  <MessageBubble 
+                    key={message.id} 
+                    message={message}
+                    reactions={reactionsByMessage[message.message_id]}
+                  />
                 ))}
               </div>
             </div>
