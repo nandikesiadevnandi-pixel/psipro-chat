@@ -30,7 +30,7 @@ const QuickFilterPills = ({
   ];
 
   return (
-    <div className="flex gap-2 overflow-x-auto scrollbar-hide flex-nowrap pb-1">
+    <div className="flex gap-2 overflow-x-auto flex-nowrap pb-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
       {filters.map((filter) => {
         const isActive = activeFilter === filter.value;
 
