@@ -122,7 +122,7 @@ export const MessagesContainer = ({ messages, isLoading, conversationId }: Messa
           size="icon"
           className="absolute bottom-6 right-6 rounded-full shadow-lg bg-background hover:bg-accent border border-border z-10"
         >
-          <ChevronDown className="h-5 w-5" />
+          <ChevronDown className="h-5 w-5 text-foreground" />
           {newMessagesCount > 0 && (
             <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 min-w-[20px] flex items-center justify-center px-1.5 font-semibold">
               {newMessagesCount > 99 ? '99+' : newMessagesCount}
