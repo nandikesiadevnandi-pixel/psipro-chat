@@ -18,7 +18,7 @@ import { useAuth } from "@/contexts/AuthContext";
 interface ConversationsSidebarProps {
   selectedId: string | null;
   onSelect: (id: string) => void;
-  instanceId: string;
+  instanceId?: string;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
 }
