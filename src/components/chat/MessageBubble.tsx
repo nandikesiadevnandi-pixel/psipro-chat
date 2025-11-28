@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Tables } from "@/integrations/supabase/types";
 import { format } from "date-fns";
-import { Check, CheckCheck, Clock, Reply } from "lucide-react";
+import { Check, CheckCheck, Clock, Reply, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { QuotedMessagePreview } from "./QuotedMessagePreview";
 import { ImageViewerModal } from "./ImageViewerModal";
@@ -11,6 +11,8 @@ import { useMessageReaction } from "@/hooks/whatsapp/useMessageReaction";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { EditHistoryPopover } from "./EditHistoryPopover";
+import { EditMessageModal } from "./EditMessageModal";
+import { useEditMessage } from "@/hooks/whatsapp/useEditMessage";
 
 type Message = Tables<'whatsapp_messages'>;
 type Reaction = Tables<'whatsapp_reactions'>;
@@ -24,9 +26,16 @@ interface MessageBubbleProps {
 export const MessageBubble = ({ message, reactions = [], onReply }: MessageBubbleProps) => {
   const [viewerImage, setViewerImage] = useState<string | null>(null);
   const [isHovered, setIsHovered] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const isFromMe = message.is_from_me;
   const time = format(new Date(message.timestamp), 'HH:mm');
   const { sendReaction } = useMessageReaction();
+  const editMessage = useEditMessage();
+
+  // Check if message can be edited (within 15 minutes and text only)
+  const canEdit = isFromMe && 
+    message.message_type === 'text' && 
+    (Date.now() - new Date(message.timestamp).getTime()) < 15 * 60 * 1000;
 
   const handleReact = (emoji: string) => {
     sendReaction.mutate({
@@ -35,6 +44,18 @@ export const MessageBubble = ({ message, reactions = [], onReply }: MessageBubbl
       emoji,
       reactorJid: message.remote_jid,
       isFromMe: true,
+    });
+  };
+
+  const handleEditSave = (newContent: string) => {
+    editMessage.mutate({
+      messageId: message.message_id,
+      conversationId: message.conversation_id,
+      newContent,
+    }, {
+      onSuccess: () => {
+        setIsEditModalOpen(false);
+      },
     });
   };
 
@@ -179,6 +200,17 @@ export const MessageBubble = ({ message, reactions = [], onReply }: MessageBubbl
               onReact={handleReact}
               isFromMe={isFromMe}
             />
+            {canEdit && (
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => setIsEditModalOpen(true)}
+                className="h-8 w-8 rounded-full bg-background/95 backdrop-blur-sm border border-border shadow-sm hover:bg-accent"
+                title="Editar mensagem"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            )}
             {onReply && (
               <Button
                 size="icon"
@@ -247,6 +279,14 @@ export const MessageBubble = ({ message, reactions = [], onReply }: MessageBubbl
         imageUrl={viewerImage}
         isOpen={!!viewerImage}
         onClose={() => setViewerImage(null)}
+      />
+
+      <EditMessageModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        currentContent={message.content}
+        onSave={handleEditSave}
+        isLoading={editMessage.isPending}
       />
     </div>
   );

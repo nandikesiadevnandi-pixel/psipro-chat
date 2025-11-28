@@ -6,6 +6,9 @@ verify_jwt = false
 [functions.send-whatsapp-message]
 verify_jwt = false
 
+[functions.edit-whatsapp-message]
+verify_jwt = false
+
 [functions.analyze-whatsapp-sentiment]
 verify_jwt = false
 
