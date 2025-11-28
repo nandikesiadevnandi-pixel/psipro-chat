@@ -10,5 +10,6 @@ export { ChatHeaderMenu } from './ChatHeaderMenu';
 export { EditContactModal } from './EditContactModal';
 export { EditHistoryPopover } from './EditHistoryPopover';
 export { EditMessageModal } from './EditMessageModal';
+export { DeleteMessageDialog } from './DeleteMessageDialog';
 export * from './input';
 export * from './details';

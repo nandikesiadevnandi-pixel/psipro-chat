@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Tables } from "@/integrations/supabase/types";
 import { format } from "date-fns";
-import { Check, CheckCheck, Clock, Reply, Pencil } from "lucide-react";
+import { Check, CheckCheck, Clock, Reply, Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { QuotedMessagePreview } from "./QuotedMessagePreview";
 import { ImageViewerModal } from "./ImageViewerModal";
@@ -12,7 +12,9 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { EditHistoryPopover } from "./EditHistoryPopover";
 import { EditMessageModal } from "./EditMessageModal";
+import { DeleteMessageDialog } from "./DeleteMessageDialog";
 import { useEditMessage } from "@/hooks/whatsapp/useEditMessage";
+import { useDeleteMessage } from "@/hooks/whatsapp/useDeleteMessage";
 
 type Message = Tables<'whatsapp_messages'>;
 type Reaction = Tables<'whatsapp_reactions'>;
@@ -27,10 +29,12 @@ export const MessageBubble = ({ message, reactions = [], onReply }: MessageBubbl
   const [viewerImage, setViewerImage] = useState<string | null>(null);
   const [isHovered, setIsHovered] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const isFromMe = message.is_from_me;
   const time = format(new Date(message.timestamp), 'HH:mm');
   const { sendReaction } = useMessageReaction();
   const editMessage = useEditMessage();
+  const deleteMessage = useDeleteMessage();
 
   // Check if message can be edited (within 15 minutes and text only)
   const canEdit = isFromMe && 
@@ -55,6 +59,17 @@ export const MessageBubble = ({ message, reactions = [], onReply }: MessageBubbl
     }, {
       onSuccess: () => {
         setIsEditModalOpen(false);
+      },
+    });
+  };
+
+  const handleDeleteConfirm = () => {
+    deleteMessage.mutate({
+      messageId: message.message_id,
+      conversationId: message.conversation_id,
+    }, {
+      onSuccess: () => {
+        setIsDeleteDialogOpen(false);
       },
     });
   };
@@ -211,6 +226,17 @@ export const MessageBubble = ({ message, reactions = [], onReply }: MessageBubbl
                 <Pencil className="h-4 w-4" />
               </Button>
             )}
+            {isFromMe && (
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => setIsDeleteDialogOpen(true)}
+                className="h-8 w-8 rounded-full bg-background/95 backdrop-blur-sm border border-border shadow-sm hover:bg-destructive hover:text-destructive-foreground"
+                title="Apagar mensagem"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
             {onReply && (
               <Button
                 size="icon"
@@ -287,6 +313,13 @@ export const MessageBubble = ({ message, reactions = [], onReply }: MessageBubbl
         currentContent={message.content}
         onSave={handleEditSave}
         isLoading={editMessage.isPending}
+      />
+
+      <DeleteMessageDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        isLoading={deleteMessage.isPending}
       />
     </div>
   );
