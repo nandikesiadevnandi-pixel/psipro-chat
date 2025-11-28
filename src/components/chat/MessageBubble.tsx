@@ -147,10 +147,10 @@ export const MessageBubble = ({ message, reactions = [] }: MessageBubbleProps) =
         isFromMe ? 'justify-end' : 'justify-start'
       )}
     >
-      <div>
+      <div className="max-w-[70%]">
         <Card
           className={cn(
-            'max-w-[70%] p-3 space-y-1',
+            'p-3 space-y-1',
             message.message_type === 'sticker' && 'bg-transparent border-none shadow-none p-0',
             isFromMe
               ? 'bg-primary text-primary-foreground'
