@@ -9,7 +9,6 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const WhatsAppSettings = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
   const { isAdmin } = useAuth();
 
   return (
@@ -44,14 +43,7 @@ const WhatsAppSettings = () => {
           </TabsList>
 
           <TabsContent value="instances" className="space-y-4 mt-6">
-            <div className="flex justify-end gap-2">
-              <Button 
-                variant="outline"
-                onClick={() => setShowOnboarding(true)}
-              >
-                <HelpCircle className="mr-2 h-4 w-4" />
-                Como configurar
-              </Button>
+            <div className="flex justify-end">
               <Button onClick={() => setShowAddDialog(true)}>
                 <Plus className="mr-2 h-4 w-4" />
                 Nova Instância
@@ -82,10 +74,8 @@ const WhatsAppSettings = () => {
         onOpenChange={setShowAddDialog}
       />
 
-      {/* Onboarding Guide */}
+      {/* Onboarding Guide - Widget flutuante */}
       <InstanceOnboardingGuide
-        open={showOnboarding}
-        onOpenChange={setShowOnboarding}
         onOpenAddDialog={() => setShowAddDialog(true)}
       />
     </div>
