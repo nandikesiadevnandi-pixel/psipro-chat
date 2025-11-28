@@ -574,13 +574,25 @@ async function processMessageUpsert(payload: EvolutionWebhookPayload, supabase: 
     // Get instance data
     const { data: instanceData, error: instanceError } = await supabase
       .from('whatsapp_instances')
-      .select('id, instance_name')
+      .select('id, instance_name, status')
       .eq('instance_name', instance)
       .maybeSingle();
 
     if (instanceError || !instanceData) {
       console.error('[evolution-webhook] Instance not found:', instance);
       return;
+    }
+    
+    // Update status to 'connected' if processing a message (instance is clearly connected)
+    if (instanceData.status !== 'connected') {
+      await supabase
+        .from('whatsapp_instances')
+        .update({ 
+          status: 'connected',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', instanceData.id);
+      console.log(`[evolution-webhook] Updated instance ${instanceData.instance_name} status to connected`);
     }
     
     // Get instance secrets
