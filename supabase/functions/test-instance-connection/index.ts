@@ -109,6 +109,25 @@ serve(async (req) => {
     const data = await response.json();
     console.log('[test-instance-connection] Connection test successful');
 
+    // Map Evolution API state to our status
+    let newStatus = 'disconnected';
+    if (data.state === 'open' || data.instance?.state === 'open') {
+      newStatus = 'connected';
+    } else if (data.state === 'connecting') {
+      newStatus = 'connecting';
+    }
+
+    // Update status in database
+    await supabaseAdmin
+      .from('whatsapp_instances')
+      .update({ 
+        status: newStatus,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', instanceId);
+
+    console.log(`[test-instance-connection] Updated instance status to ${newStatus}`);
+
     return new Response(JSON.stringify(data), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
