@@ -101,20 +101,26 @@ Deno.serve(async (req) => {
     let baseUrl = instance.api_url.endsWith('/') ? instance.api_url.slice(0, -1) : instance.api_url;
     baseUrl = baseUrl.replace(/\/manager$/, '');
 
-    const endpoint = `${baseUrl}/message/updateMessage/${instance.instance_name}`;
+    const endpoint = `${baseUrl}/chat/updateMessage/${instance.instance_name}`;
+    
+    // Extract phone number from remote_jid
+    const phoneNumber = message.remote_jid.replace(/@.*$/, '');
+    
     const requestBody = {
-      key: {
-        id: body.messageId,
-        remoteJid: message.remote_jid,
-      },
+      number: phoneNumber,
       text: body.newContent,
+      key: {
+        remoteJid: message.remote_jid,
+        fromMe: true,
+        id: body.messageId,
+      },
     };
 
     console.log('[edit-whatsapp-message] Evolution API endpoint:', endpoint);
 
     // Call Evolution API to edit message
     const evolutionResponse = await fetch(endpoint, {
-      method: 'PUT',
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'apikey': instance.api_key,
