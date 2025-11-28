@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -19,13 +18,13 @@ import {
   Zap,
   Check,
   Rocket,
+  X,
+  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
 interface InstanceOnboardingGuideProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   onOpenAddDialog?: () => void;
 }
 
@@ -168,10 +167,9 @@ const getPhaseColor = (phase: string) => {
 };
 
 export const InstanceOnboardingGuide = ({ 
-  open, 
-  onOpenChange,
   onOpenAddDialog 
 }: InstanceOnboardingGuideProps) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   const [completedSteps, setCompletedSteps] = useState<number[]>(() => {
     const saved = localStorage.getItem('whatsapp-onboarding-progress');
     return saved ? JSON.parse(saved) : [];
@@ -187,6 +185,7 @@ export const InstanceOnboardingGuide = ({
   }, [completedSteps]);
 
   const progressPercent = Math.round((completedSteps.length / onboardingSteps.length) * 100);
+  const remainingSteps = onboardingSteps.length - completedSteps.length;
 
   const toggleStep = (stepId: number) => {
     setCompletedSteps(prev => 
@@ -207,150 +206,176 @@ export const InstanceOnboardingGuide = ({
   };
 
   const handleOpenAddInstance = () => {
-    onOpenChange(false);
+    setIsExpanded(false);
     onOpenAddDialog?.();
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-2xl">
-            <Rocket className="h-6 w-6 text-primary" />
-            Bem-vindo! Configuração de Instância
-          </DialogTitle>
-          <DialogDescription>
-            Siga este checklist para configurar sua instância do WhatsApp
-          </DialogDescription>
-        </DialogHeader>
+    <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-2">
+      {/* Painel expandido */}
+      {isExpanded && (
+        <div className="w-[420px] rounded-lg shadow-2xl border border-border overflow-hidden animate-in slide-in-from-bottom-4 bg-background">
+          {/* Header escuro */}
+          <div className="bg-primary text-primary-foreground p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Rocket className="h-5 w-5" />
+                <span className="font-semibold">Bem-vindo!</span>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setIsExpanded(false)}
+                className="h-8 w-8 hover:bg-primary-foreground/20 text-primary-foreground"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <p className="text-sm opacity-90 mt-1">Checklist de Configuração</p>
+            
+            {/* Barra de progresso */}
+            <div className="flex items-center gap-2 mt-3">
+              <span className="text-sm font-medium">{progressPercent}%</span>
+              <Progress 
+                value={progressPercent} 
+                className="flex-1 bg-primary-foreground/20 [&>div]:bg-primary-foreground" 
+              />
+            </div>
+          </div>
+          
+          {/* Lista de passos */}
+          <ScrollArea className="h-[400px] bg-background">
+            <Accordion type="single" collapsible className="p-2 space-y-1">
+              {onboardingSteps.map((step) => {
+                const isCompleted = completedSteps.includes(step.id);
+                const Icon = step.icon;
 
-        {/* Barra de progresso */}
-        <div className="flex items-center gap-3 py-2">
-          <span className="text-lg font-semibold text-primary min-w-[60px]">{progressPercent}%</span>
-          <Progress value={progressPercent} className="flex-1" />
-          <span className="text-sm text-muted-foreground">
-            {completedSteps.length}/{onboardingSteps.length}
-          </span>
-        </div>
-
-        {/* Lista de passos com Accordion */}
-        <ScrollArea className="h-[500px] pr-4">
-          <Accordion type="single" collapsible className="space-y-2">
-            {onboardingSteps.map((step) => {
-              const isCompleted = completedSteps.includes(step.id);
-              const Icon = step.icon;
-
-              return (
-                <AccordionItem 
-                  key={step.id} 
-                  value={`step-${step.id}`}
-                  className="border rounded-lg px-4 data-[state=open]:bg-muted/50"
-                >
-                  <div className="flex items-center gap-3 py-1">
-                    <Checkbox 
-                      checked={isCompleted}
-                      onCheckedChange={() => toggleStep(step.id)}
-                      className="mt-3"
-                    />
-                    <AccordionTrigger className="flex-1 hover:no-underline py-3">
-                      <div className="flex items-center gap-3 text-left">
-                        <div className={cn("p-2 rounded-lg", getPhaseColor(step.phase))}>
-                          <Icon className="h-5 w-5" />
+                return (
+                  <AccordionItem 
+                    key={step.id} 
+                    value={`step-${step.id}`}
+                    className="border rounded-md"
+                  >
+                    <div className="flex items-start gap-2 px-3 py-2">
+                      <Checkbox 
+                        checked={isCompleted}
+                        onCheckedChange={() => toggleStep(step.id)}
+                        className="mt-2"
+                      />
+                      <AccordionTrigger className="flex-1 hover:no-underline py-0">
+                        <div className="flex items-center gap-2 text-left w-full">
+                          <div className={cn("p-1.5 rounded-md", getPhaseColor(step.phase))}>
+                            <Icon className="h-4 w-4" />
+                          </div>
+                          <span className={cn(
+                            "text-sm flex-1",
+                            isCompleted && "line-through text-muted-foreground"
+                          )}>
+                            {step.title}
+                          </span>
                         </div>
-                        <div className="flex-1">
-                          <div className="font-medium">{step.title}</div>
-                          <Badge variant="outline" className="mt-1 text-xs">
-                            Passo {step.id}
-                          </Badge>
-                        </div>
-                      </div>
-                    </AccordionTrigger>
-                  </div>
-                  
-                  <AccordionContent className="pb-4 pt-2 pl-12">
-                    <div className="space-y-4">
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        {step.description}
-                      </p>
+                      </AccordionTrigger>
+                    </div>
+                    
+                    <AccordionContent className="px-3 pb-3 pt-0 pl-12">
+                      <div className="space-y-3">
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {step.description}
+                        </p>
 
-                      {/* Link externo */}
-                      {step.link && (
-                        <Button variant="outline" size="sm" asChild className="w-full">
-                          <a href={step.link} target="_blank" rel="noopener noreferrer">
-                            <ExternalLink className="mr-2 h-4 w-4" />
-                            {step.linkText}
-                          </a>
-                        </Button>
-                      )}
+                        {/* Link externo */}
+                        {step.link && (
+                          <Button variant="outline" size="sm" asChild className="w-full">
+                            <a href={step.link} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="mr-2 h-3 w-3" />
+                              {step.linkText}
+                            </a>
+                          </Button>
+                        )}
 
-                      {/* Botão para abrir AddInstanceDialog */}
-                      {step.showAddInstanceButton && (
-                        <Button onClick={handleOpenAddInstance} size="sm" className="w-full">
-                          <Zap className="mr-2 h-4 w-4" />
-                          Criar Nova Instância
-                        </Button>
-                      )}
+                        {/* Botão para abrir AddInstanceDialog */}
+                        {step.showAddInstanceButton && (
+                          <Button onClick={handleOpenAddInstance} size="sm" className="w-full">
+                            <Zap className="mr-2 h-3 w-3" />
+                            Criar Nova Instância
+                          </Button>
+                        )}
 
-                      {/* Informações do Webhook */}
-                      {step.showWebhookInfo && (
-                        <div className="space-y-3">
-                          <div className="p-3 bg-muted rounded-lg">
-                            <div className="text-xs font-medium mb-2 text-muted-foreground">URL do Webhook:</div>
-                            <div className="flex items-center gap-2">
-                              <code className="flex-1 text-xs bg-background p-2 rounded border break-all">
-                                {webhookUrl}
-                              </code>
-                              <Button
-                                size="icon"
-                                variant="outline"
-                                onClick={handleCopyWebhook}
-                                className="shrink-0"
-                              >
-                                {copiedWebhook ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                              </Button>
+                        {/* Informações do Webhook */}
+                        {step.showWebhookInfo && (
+                          <div className="space-y-2">
+                            <div className="p-2 bg-muted rounded-md">
+                              <div className="text-xs font-medium mb-1 text-muted-foreground">URL do Webhook:</div>
+                              <div className="flex items-center gap-1">
+                                <code className="flex-1 text-xs bg-background p-1.5 rounded border break-all">
+                                  {webhookUrl}
+                                </code>
+                                <Button
+                                  size="icon"
+                                  variant="outline"
+                                  onClick={handleCopyWebhook}
+                                  className="h-7 w-7 shrink-0"
+                                >
+                                  {copiedWebhook ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                                </Button>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
-                      {/* Informações de eventos */}
-                      {step.showEventsInfo && (
-                        <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
-                          <div className="text-xs font-medium mb-2">Eventos a ativar:</div>
-                          <ul className="text-xs space-y-1 text-muted-foreground">
-                            <li>✓ MESSAGES_UPSERT</li>
-                            <li>✓ Webhook base 64</li>
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              );
-            })}
-          </Accordion>
-        </ScrollArea>
+                        {/* Informações de eventos */}
+                        {step.showEventsInfo && (
+                          <div className="p-2 bg-primary/5 border border-primary/20 rounded-md">
+                            <div className="text-xs font-medium mb-1">Eventos a ativar:</div>
+                            <ul className="text-xs space-y-0.5 text-muted-foreground">
+                              <li>✓ MESSAGES_UPSERT</li>
+                              <li>✓ Webhook base 64</li>
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })}
+            </Accordion>
+          </ScrollArea>
 
-        {/* Footer com CTA */}
-        <div className="flex items-center justify-between pt-4 border-t">
-          <Button 
-            variant="outline" 
-            onClick={() => {
-              setCompletedSteps([]);
-              toast({
-                title: "Progresso resetado",
-                description: "Todos os passos foram desmarcados.",
-              });
-            }}
-          >
-            Resetar
-          </Button>
-          <Button onClick={handleOpenAddInstance}>
-            <Rocket className="mr-2 h-4 w-4" />
-            Começar Configuração!
-          </Button>
+          {/* Footer */}
+          <div className="border-t p-3 bg-muted/50">
+            <Button 
+              onClick={() => {
+                setCompletedSteps([]);
+                toast({
+                  title: "Progresso resetado",
+                  description: "Todos os passos foram desmarcados.",
+                });
+              }}
+              variant="ghost"
+              size="sm"
+              className="w-full text-xs"
+            >
+              Resetar progresso
+            </Button>
+          </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      )}
+      
+      {/* Botão flutuante (sempre visível) */}
+      <Button 
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="rounded-full shadow-lg px-6 h-12"
+        size="lg"
+      >
+        <Rocket className="mr-2 h-5 w-5" />
+        {isExpanded ? "Fechar" : "Configurar"}
+        {!isExpanded && remainingSteps > 0 && (
+          <Badge className="ml-2 bg-primary-foreground text-primary hover:bg-primary-foreground">
+            {remainingSteps}
+          </Badge>
+        )}
+        {!isExpanded && <ChevronDown className="ml-1 h-4 w-4" />}
+      </Button>
+    </div>
   );
 };
