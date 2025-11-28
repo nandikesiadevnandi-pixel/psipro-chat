@@ -463,11 +463,47 @@ export type Database = {
           },
         ]
       }
+      whatsapp_message_edit_history: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          edited_at: string
+          id: string
+          message_id: string
+          previous_content: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          edited_at?: string
+          id?: string
+          message_id: string
+          previous_content: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          edited_at?: string
+          id?: string
+          message_id?: string
+          previous_content?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_message_edit_history_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_messages: {
         Row: {
           content: string
           conversation_id: string
           created_at: string
+          edited_at: string | null
           id: string
           is_from_me: boolean | null
           media_mimetype: string | null
@@ -475,6 +511,7 @@ export type Database = {
           message_id: string
           message_type: string | null
           metadata: Json | null
+          original_content: string | null
           quoted_message_id: string | null
           remote_jid: string
           status: string | null
@@ -484,6 +521,7 @@ export type Database = {
           content: string
           conversation_id: string
           created_at?: string
+          edited_at?: string | null
           id?: string
           is_from_me?: boolean | null
           media_mimetype?: string | null
@@ -491,6 +529,7 @@ export type Database = {
           message_id: string
           message_type?: string | null
           metadata?: Json | null
+          original_content?: string | null
           quoted_message_id?: string | null
           remote_jid: string
           status?: string | null
@@ -500,6 +539,7 @@ export type Database = {
           content?: string
           conversation_id?: string
           created_at?: string
+          edited_at?: string | null
           id?: string
           is_from_me?: boolean | null
           media_mimetype?: string | null
@@ -507,6 +547,7 @@ export type Database = {
           message_id?: string
           message_type?: string | null
           metadata?: Json | null
+          original_content?: string | null
           quoted_message_id?: string | null
           remote_jid?: string
           status?: string | null

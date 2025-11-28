@@ -8,5 +8,6 @@ export { QuotedMessagePreview } from './QuotedMessagePreview';
 export { ImageViewerModal } from './ImageViewerModal';
 export { ChatHeaderMenu } from './ChatHeaderMenu';
 export { EditContactModal } from './EditContactModal';
+export { EditHistoryPopover } from './EditHistoryPopover';
 export * from './input';
 export * from './details';
