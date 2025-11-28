@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useWhatsAppInstances } from "@/hooks/whatsapp";
 
 interface InstanceOnboardingGuideProps {
   onOpenAddDialog?: () => void;
@@ -176,6 +177,7 @@ export const InstanceOnboardingGuide = ({
   });
   const [copiedWebhook, setCopiedWebhook] = useState(false);
   const { toast } = useToast();
+  const { instances, isLoading: isLoadingInstances } = useWhatsAppInstances();
   
   const webhookUrl = `${window.location.origin}/functions/v1/evolution-webhook`;
 
@@ -183,6 +185,13 @@ export const InstanceOnboardingGuide = ({
   useEffect(() => {
     localStorage.setItem('whatsapp-onboarding-progress', JSON.stringify(completedSteps));
   }, [completedSteps]);
+
+  // Abrir automaticamente se não houver instâncias e o checklist não estiver completo
+  useEffect(() => {
+    if (!isLoadingInstances && instances.length === 0 && completedSteps.length < onboardingSteps.length) {
+      setIsExpanded(true);
+    }
+  }, [isLoadingInstances, instances.length]);
 
   const progressPercent = Math.round((completedSteps.length / onboardingSteps.length) * 100);
   const remainingSteps = onboardingSteps.length - completedSteps.length;
@@ -368,7 +377,7 @@ export const InstanceOnboardingGuide = ({
         size="lg"
       >
         <Rocket className="mr-2 h-5 w-5" />
-        {isExpanded ? "Fechar" : "Configurar"}
+        {isExpanded ? "Fechar" : "Checklist de configuração"}
         {!isExpanded && remainingSteps > 0 && (
           <Badge className="ml-2 bg-primary-foreground text-primary hover:bg-primary-foreground">
             {remainingSteps}
