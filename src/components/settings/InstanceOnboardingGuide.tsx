@@ -24,6 +24,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useWhatsAppInstances } from "@/hooks/whatsapp";
+import confetti from "canvas-confetti";
 
 interface InstanceOnboardingGuideProps {
   onOpenAddDialog?: () => void;
@@ -175,6 +176,10 @@ export const InstanceOnboardingGuide = ({
     const saved = localStorage.getItem('whatsapp-onboarding-progress');
     return saved ? JSON.parse(saved) : [];
   });
+  const [hasCelebrated, setHasCelebrated] = useState<boolean>(() => {
+    const saved = localStorage.getItem('whatsapp-onboarding-celebrated');
+    return saved ? JSON.parse(saved) : false;
+  });
   const [copiedWebhook, setCopiedWebhook] = useState(false);
   const { toast } = useToast();
   const { instances, isLoading: isLoadingInstances } = useWhatsAppInstances();
@@ -192,6 +197,48 @@ export const InstanceOnboardingGuide = ({
       setIsExpanded(true);
     }
   }, [isLoadingInstances, instances.length]);
+
+  // Celebração ao completar todos os passos
+  useEffect(() => {
+    if (completedSteps.length === onboardingSteps.length && !hasCelebrated) {
+      // Primeiro disparo: do canto inferior direito
+      confetti({
+        particleCount: 100,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0.95, y: 0.95 },
+        colors: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6']
+      });
+
+      // Segundo disparo: das laterais
+      setTimeout(() => {
+        confetti({
+          particleCount: 50,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6']
+        });
+        confetti({
+          particleCount: 50,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6']
+        });
+      }, 250);
+
+      // Toast de parabéns
+      toast({
+        title: "🎉 Parabéns!",
+        description: "Você completou toda a configuração!",
+      });
+
+      // Marcar como celebrado
+      setHasCelebrated(true);
+      localStorage.setItem('whatsapp-onboarding-celebrated', JSON.stringify(true));
+    }
+  }, [completedSteps.length, hasCelebrated, toast]);
 
   const progressPercent = Math.round((completedSteps.length / onboardingSteps.length) * 100);
   const remainingSteps = onboardingSteps.length - completedSteps.length;
@@ -229,7 +276,11 @@ export const InstanceOnboardingGuide = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Rocket className="h-5 w-5" />
-                <span className="font-semibold">Bem-vindo!</span>
+                <span className="font-semibold">
+                  {completedSteps.length === onboardingSteps.length 
+                    ? "Configuração Completa! 🎉" 
+                    : "Bem-vindo!"}
+                </span>
               </div>
               <Button 
                 variant="ghost" 
@@ -355,6 +406,9 @@ export const InstanceOnboardingGuide = ({
             <Button 
               onClick={() => {
                 setCompletedSteps([]);
+                setHasCelebrated(false);
+                localStorage.removeItem('whatsapp-onboarding-progress');
+                localStorage.removeItem('whatsapp-onboarding-celebrated');
                 toast({
                   title: "Progresso resetado",
                   description: "Todos os passos foram desmarcados.",
