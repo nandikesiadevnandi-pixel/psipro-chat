@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { translateAuthError } from '@/utils/authErrorMessages';
 
 const signupSchema = z.object({
   fullName: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
@@ -40,9 +41,7 @@ export function SignupForm() {
         toast({
           variant: 'destructive',
           title: 'Erro ao criar conta',
-          description: error.message === 'User already registered' 
-            ? 'Este email já está cadastrado' 
-            : error.message,
+          description: translateAuthError(error.message),
         });
       }
     } catch (error) {

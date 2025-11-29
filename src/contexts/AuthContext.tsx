@@ -149,7 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = async (email: string, password: string, fullName: string) => {
     const redirectUrl = `${window.location.origin}/`;
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -161,11 +161,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     if (!error) {
-      toast({
-        title: "Cadastro realizado com sucesso",
-        description: "Você já pode fazer login no sistema.",
-      });
-      navigate('/whatsapp');
+      // Check if email confirmation is required
+      if (data.user && !data.session) {
+        toast({
+          title: "Cadastro realizado!",
+          description: "Enviamos um email de confirmação. Por favor, verifique sua caixa de entrada e clique no link para ativar sua conta.",
+          duration: 10000,
+        });
+        // Don't navigate - user needs to confirm email first
+      } else {
+        // Auto-confirm is enabled, can navigate
+        toast({
+          title: "Cadastro realizado com sucesso",
+          description: "Bem-vindo ao sistema!",
+        });
+        navigate('/whatsapp');
+      }
     }
 
     return { error };
