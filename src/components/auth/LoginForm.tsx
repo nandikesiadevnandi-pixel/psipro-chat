@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { translateAuthError } from '@/utils/authErrorMessages';
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -35,9 +36,7 @@ export function LoginForm() {
         toast({
           variant: 'destructive',
           title: 'Erro ao fazer login',
-          description: error.message === 'Invalid login credentials' 
-            ? 'Email ou senha incorretos' 
-            : error.message,
+          description: translateAuthError(error.message),
         });
       }
     } catch (error) {
