@@ -6,28 +6,23 @@ export const useProjectSetup = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Check if cron jobs exist
-  const { data: cronJobsExist, isLoading: isCheckingCronJobs } = useQuery({
-    queryKey: ['project-setup', 'cron-jobs'],
+  // Check if project is configured by verifying project_config table
+  const { data: isConfigured, isLoading: isCheckingConfig } = useQuery({
+    queryKey: ['project-setup', 'config'],
     queryFn: async () => {
       try {
-        // Check if cron jobs are configured by querying the cron.job table
+        // Check if we have project_url and anon_key in config
         const { data, error } = await supabase
-          .rpc('exec_sql', {
-            sql: `
-              SELECT COUNT(*) as count 
-              FROM cron.job 
-              WHERE jobname IN ('check-instances-status', 'sync-contact-profiles-daily');
-            `
-          });
+          .from('project_config')
+          .select('key')
+          .in('key', ['project_url', 'anon_key']);
 
         if (error) throw error;
 
-        // If we have 2 jobs, configuration is complete
-        return data?.[0]?.count === 2;
+        // Configuration is complete if both keys exist
+        return data.length === 2;
       } catch (error: any) {
-        console.error('[useProjectSetup] Error checking cron jobs:', error);
-        // If we can't check (permissions issue), assume they don't exist
+        console.error('[useProjectSetup] Error checking config:', error);
         return false;
       }
     },
@@ -54,7 +49,7 @@ export const useProjectSetup = () => {
     },
     onSuccess: () => {
       console.log('[useProjectSetup] Setup completed successfully');
-      queryClient.invalidateQueries({ queryKey: ['project-setup', 'cron-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['project-setup', 'config'] });
       
       toast({
         title: "Configuração automática concluída",
@@ -73,10 +68,10 @@ export const useProjectSetup = () => {
   });
 
   return {
-    cronJobsExist,
-    isCheckingCronJobs,
+    isConfigured,
+    isCheckingConfig,
     setupProject: setupProject.mutate,
     isSettingUp: setupProject.isPending,
-    setupComplete: cronJobsExist === true,
+    setupComplete: isConfigured === true,
   };
 };

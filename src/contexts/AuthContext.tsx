@@ -3,6 +3,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { useProjectSetup } from '@/hooks/useProjectSetup';
 
 type AppRole = 'admin' | 'supervisor' | 'agent';
 
@@ -41,6 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { setupProject, isConfigured, isCheckingConfig } = useProjectSetup();
 
   // Load profile and role for a user
   const loadUserData = async (userId: string) => {
@@ -118,6 +120,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Auto-setup project for admin on first login
+  useEffect(() => {
+    if (role === 'admin' && !isCheckingConfig && isConfigured === false) {
+      console.log('[AuthContext] Admin detected, running auto-setup...');
+      setupProject();
+    }
+  }, [role, isConfigured, isCheckingConfig, setupProject]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
