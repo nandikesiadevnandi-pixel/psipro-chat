@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -72,6 +72,13 @@ const NewConversationModal = ({
     },
   });
 
+  // Auto-select first instance if only one exists or if no instance is selected
+  useEffect(() => {
+    if (instances.length > 0 && !form.getValues('instanceId')) {
+      form.setValue('instanceId', instances[0].id);
+    }
+  }, [instances, form]);
+
   const onSubmit = (values: FormValues) => {
     // Normalize phone number and add country code 55 automatically
     const normalizedPhone = normalizeBrazilianPhone(values.phoneNumber);
@@ -109,8 +116,8 @@ const NewConversationModal = ({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* Instance selection (only if multiple instances) */}
-            {instances.length > 1 && (
+            {/* Instance selection (only if multiple instances or no instance selected) */}
+            {(instances.length > 1 || !form.watch('instanceId')) && (
               <FormField
                 control={form.control}
                 name="instanceId"
