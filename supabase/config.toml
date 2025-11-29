@@ -4,6 +4,10 @@ project_id = "vxkzxbfglexxjlphbeav"
 [functions.evolution-webhook]
 verify_jwt = false
 
+# Setup automático do projeto após remix
+[functions.setup-project-config]
+verify_jwt = true
+
 # Todas as outras funções - habilitar JWT
 [functions.send-whatsapp-message]
 verify_jwt = true
