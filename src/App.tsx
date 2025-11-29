@@ -20,6 +20,7 @@ const queryClient = new QueryClient();
 
 const App = () => {
   const [showSetupGuide, setShowSetupGuide] = useState(false);
+  const [isTabHidden, setIsTabHidden] = useState(false);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -30,7 +31,12 @@ const App = () => {
               <Toaster />
               <Sonner />
               <SetupGuideModal open={showSetupGuide} onOpenChange={setShowSetupGuide} />
-              <SetupGuideSideTab onClick={() => setShowSetupGuide(true)} />
+              {!isTabHidden && (
+                <SetupGuideSideTab 
+                  onClick={() => setShowSetupGuide(true)} 
+                  onClose={() => setIsTabHidden(true)}
+                />
+              )}
               <Routes>
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
