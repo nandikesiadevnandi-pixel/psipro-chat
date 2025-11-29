@@ -20,7 +20,7 @@ export const SetupGuideSideTab = ({ onClick, onClose }: SetupGuideSideTabProps) 
     <button
       onClick={onClick}
       className={cn(
-        "fixed right-0 top-1/2 -translate-y-1/2 z-50",
+        "fixed right-0 bottom-4 z-50",
         "flex items-center gap-2 py-2 px-2.5",
         "bg-primary text-primary-foreground",
         "hover:bg-primary/90",
