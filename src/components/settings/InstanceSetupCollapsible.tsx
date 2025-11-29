@@ -129,14 +129,14 @@ const onboardingSteps = [
     description: "No Evolution, acesse Events > Webhook.",
     icon: Webhook
   },
-  {
-    id: 13,
-    phase: "webhook",
-    phaseLabel: "Configuração do Webhook",
-    title: "Configurar Webhook",
-    description: "Cole a URL do Webhook no campo 'Webhook' e ative 'Webhook base 64'.",
-    icon: Settings
-  },
+    {
+      id: 13,
+      phase: "webhook",
+      phaseLabel: "Configuração do Webhook",
+      title: "Configurar Webhook",
+      description: "Acesse Events > Webhook e cole a URL no campo 'URL'. Ative 'Webhook base 64'.",
+      icon: Settings
+    },
   {
     id: 14,
     phase: "webhook",
