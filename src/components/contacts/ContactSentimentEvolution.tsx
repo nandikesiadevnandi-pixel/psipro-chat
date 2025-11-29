@@ -29,7 +29,15 @@ const sentimentColors = {
 };
 
 export function ContactSentimentEvolution({ sentimentHistory }: ContactSentimentEvolutionProps) {
-  const chartData = sentimentHistory.map((item) => ({
+  // Group by unique date to avoid overlapping points
+  const uniqueDatesMap = new Map<string, SentimentHistoryItem>();
+  sentimentHistory.forEach(item => {
+    const dateKey = format(new Date(item.created_at), 'yyyy-MM-dd');
+    // Keep last sentiment of the day
+    uniqueDatesMap.set(dateKey, item);
+  });
+
+  const chartData = Array.from(uniqueDatesMap.values()).map((item) => ({
     date: format(new Date(item.created_at), 'dd/MM', { locale: ptBR }),
     fullDate: format(new Date(item.created_at), "dd 'de' MMM", { locale: ptBR }),
     sentiment: sentimentToNumber[item.sentiment],

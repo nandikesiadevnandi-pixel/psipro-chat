@@ -155,13 +155,26 @@ export const useContactDetails = (contactId: string | null) => {
       // Distribuição de tópicos
       const topicsMap = new Map<string, number>();
       for (const conversation of conversations || []) {
-        const metadata = conversation.metadata as { topics?: string[] } | null;
-        const topics = metadata?.topics || [];
+        // Safe JSON parsing for metadata
+        let parsedMetadata: { topics?: string[] } | null = null;
+        if (typeof conversation.metadata === 'string') {
+          try {
+            parsedMetadata = JSON.parse(conversation.metadata);
+          } catch (e) {
+            console.warn('Failed to parse metadata for conversation:', conversation.id);
+          }
+        } else {
+          parsedMetadata = conversation.metadata as { topics?: string[] } | null;
+        }
+        const topics = parsedMetadata?.topics || [];
         
         for (const topic of topics) {
           topicsMap.set(topic, (topicsMap.get(topic) || 0) + 1);
         }
       }
+
+      console.log('Contact details - sentimentHistory:', sentimentHistory);
+      console.log('Contact details - conversations with metadata:', conversations?.map(c => ({ id: c.id, metadata: c.metadata })));
 
       const topicsDistribution = Array.from(topicsMap.entries())
         .map(([topic, count]) => ({ topic, count }))
