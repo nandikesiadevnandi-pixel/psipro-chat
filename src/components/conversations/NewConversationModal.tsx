@@ -29,6 +29,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useWhatsAppInstances, useCreateConversation } from "@/hooks/whatsapp";
 import { toast } from "sonner";
+import { normalizeBrazilianPhone } from "@/utils/phoneUtils";
 
 interface NewConversationModalProps {
   open: boolean;
@@ -44,7 +45,7 @@ const formSchema = z.object({
   phoneNumber: z
     .string()
     .min(10, "Número muito curto")
-    .max(15, "Número muito longo")
+    .max(20, "Número muito longo")
     .refine((val) => phoneRegex.test(val), {
       message: "Formato inválido. Ex: (11) 98765-4321 ou 11987654321",
     }),
@@ -72,8 +73,8 @@ const NewConversationModal = ({
   });
 
   const onSubmit = (values: FormValues) => {
-    // Normalize phone number - remove special characters
-    const normalizedPhone = values.phoneNumber.replace(/\D/g, "");
+    // Normalize phone number and add country code 55 automatically
+    const normalizedPhone = normalizeBrazilianPhone(values.phoneNumber);
 
     createConversation(
       {
@@ -149,10 +150,13 @@ const NewConversationModal = ({
                   <FormLabel>Número de Telefone</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="(11) 98765-4321"
+                      placeholder="(91) 91516-1370"
                       {...field}
                     />
                   </FormControl>
+                  <p className="text-xs text-muted-foreground">
+                    O código do país (55) será adicionado automaticamente
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}
