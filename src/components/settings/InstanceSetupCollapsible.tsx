@@ -51,8 +51,8 @@ const onboardingSteps = [
     id: 3,
     phase: "evolution",
     phaseLabel: "Configuração do Evolution",
-    title: "Conectar via QR Code",
-    description: "Escaneie o QR Code com o WhatsApp do número que deseja conectar.",
+    title: "Conectar via QR Code no Evolution",
+    description: "Clique no ícone de engrenagem (⚙️) na instância criada no Evolution e selecione 'Get QR Code'. Escaneie o QR Code com o WhatsApp do número que deseja conectar.",
     icon: QrCode
   },
   {
