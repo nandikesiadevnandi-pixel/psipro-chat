@@ -44,6 +44,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const { setupProject, isConfigured, isCheckingConfig } = useProjectSetup();
 
+  // Auto-create profile and role if missing
+  const ensureUserProfile = async (userId: string, accessToken: string) => {
+    try {
+      console.log('🔧 [AuthContext] Attempting to auto-create profile/role...');
+      
+      const { data, error } = await supabase.functions.invoke('ensure-user-profile', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      });
+
+      if (error) {
+        console.error('❌ [AuthContext] Error calling ensure-user-profile:', error);
+        return false;
+      }
+
+      if (data?.profileCreated || data?.roleCreated) {
+        console.log('✅ [AuthContext] Profile/role auto-created:', data);
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('❌ [AuthContext] Error auto-creating profile:', error);
+      return false;
+    }
+  };
+
   // Load profile and role for a user
   const loadUserData = async (userId: string) => {
     console.log('🔍 [AuthContext] Loading user data for:', userId);
@@ -78,6 +106,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setRole(roleData.role as AppRole);
       } else {
         console.warn('⚠️ [AuthContext] No role found for user:', userId);
+      }
+
+      // If profile OR role is missing, try to auto-create them
+      if (!profileData || !roleData) {
+        console.log('⚠️ [AuthContext] Profile or role missing, attempting auto-creation...');
+        
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          const wasCreated = await ensureUserProfile(userId, session.access_token);
+          if (wasCreated) {
+            // Reload user data after creation
+            console.log('🔄 [AuthContext] Reloading user data after auto-creation...');
+            setTimeout(() => {
+              loadUserData(userId);
+            }, 500);
+            return;
+          }
+        }
       }
     } catch (error) {
       console.error('❌ [AuthContext] Error in loadUserData:', error);

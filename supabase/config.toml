@@ -44,3 +44,6 @@ verify_jwt = false
 
 [functions.check-instances-status]
 verify_jwt = false
+
+[functions.ensure-user-profile]
+verify_jwt = true
