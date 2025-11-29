@@ -6,6 +6,17 @@ type Instance = Tables<'whatsapp_instances'>;
 type InstanceInsert = TablesInsert<'whatsapp_instances'>;
 type InstanceUpdate = TablesUpdate<'whatsapp_instances'>;
 
+// Extended types that include secrets
+type InstanceInsertWithSecrets = InstanceInsert & {
+  api_url: string;
+  api_key: string;
+};
+
+type InstanceUpdateWithSecrets = InstanceUpdate & {
+  api_url?: string;
+  api_key?: string;
+};
+
 export const useWhatsAppInstances = () => {
   const queryClient = useQueryClient();
 
@@ -23,15 +34,37 @@ export const useWhatsAppInstances = () => {
   });
 
   const createInstance = useMutation({
-    mutationFn: async (instance: InstanceInsert) => {
-      const { data, error } = await supabase
+    mutationFn: async (instance: InstanceInsertWithSecrets) => {
+      const { api_url, api_key, ...instanceData } = instance;
+
+      // 1. Create instance in main table
+      const { data: instanceResult, error: instanceError } = await supabase
         .from('whatsapp_instances')
-        .insert(instance)
+        .insert(instanceData)
         .select()
         .single();
 
-      if (error) throw error;
-      return data;
+      if (instanceError) throw instanceError;
+
+      // 2. Create secrets in separate table
+      const { error: secretsError } = await supabase
+        .from('whatsapp_instance_secrets')
+        .insert({
+          instance_id: instanceResult.id,
+          api_url,
+          api_key,
+        });
+
+      if (secretsError) {
+        // Rollback: delete instance if secrets insertion fails
+        await supabase
+          .from('whatsapp_instances')
+          .delete()
+          .eq('id', instanceResult.id);
+        throw secretsError;
+      }
+
+      return instanceResult;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['whatsapp', 'instances'] });
@@ -39,15 +72,35 @@ export const useWhatsAppInstances = () => {
   });
 
   const updateInstance = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: InstanceUpdate }) => {
-      const { data, error } = await supabase
+    mutationFn: async ({ id, updates }: { id: string; updates: InstanceUpdateWithSecrets }) => {
+      const { api_url, api_key, ...instanceUpdates } = updates;
+
+      // 1. Update instance in main table
+      const { data, error: instanceError } = await supabase
         .from('whatsapp_instances')
-        .update(updates)
+        .update(instanceUpdates)
         .eq('id', id)
         .select()
         .single();
 
-      if (error) throw error;
+      if (instanceError) throw instanceError;
+
+      // 2. Update secrets if provided (upsert)
+      if (api_url || api_key) {
+        const { error: secretsError } = await supabase
+          .from('whatsapp_instance_secrets')
+          .upsert(
+            {
+              instance_id: id,
+              ...(api_url && { api_url }),
+              ...(api_key && { api_key }),
+            },
+            { onConflict: 'instance_id' }
+          );
+
+        if (secretsError) throw secretsError;
+      }
+
       return data;
     },
     onSuccess: () => {
