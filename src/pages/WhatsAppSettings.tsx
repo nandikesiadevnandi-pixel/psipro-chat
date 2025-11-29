@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, Plus, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { InstancesList, AddInstanceDialog, TeamMembersList, AssignmentRulesManager, InstanceOnboardingGuide } from "@/components/settings";
+import { InstancesList, AddInstanceDialog, TeamMembersList, AssignmentRulesManager, InstanceOnboardingGuide, SetupGuideTab } from "@/components/settings";
 import { MacrosManager } from "@/components/macros";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -34,13 +34,18 @@ const WhatsAppSettings = () => {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="instances" className="w-full">
+        <Tabs defaultValue="setup" className="w-full">
           <TabsList>
+            <TabsTrigger value="setup">Setup</TabsTrigger>
             <TabsTrigger value="instances">Instâncias</TabsTrigger>
             <TabsTrigger value="macros">Macros</TabsTrigger>
             <TabsTrigger value="assignment">Atribuição</TabsTrigger>
             {isAdmin && <TabsTrigger value="team">Equipe</TabsTrigger>}
           </TabsList>
+
+          <TabsContent value="setup" className="mt-6">
+            <SetupGuideTab />
+          </TabsContent>
 
           <TabsContent value="instances" className="space-y-4 mt-6">
             <div className="flex justify-end">

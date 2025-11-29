@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,7 +6,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth";
-import { SetupGuideModal, SetupGuideSideTab } from "@/components/setup";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import WhatsApp from "./pages/WhatsApp";
@@ -19,8 +17,6 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const App = () => {
-  const [showSetupGuide, setShowSetupGuide] = useState(false);
-  const [isTabHidden, setIsTabHidden] = useState(false);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -30,13 +26,6 @@ const App = () => {
             <TooltipProvider>
               <Toaster />
               <Sonner />
-              <SetupGuideModal open={showSetupGuide} onOpenChange={setShowSetupGuide} />
-              {!isTabHidden && (
-                <SetupGuideSideTab 
-                  onClick={() => setShowSetupGuide(true)} 
-                  onClose={() => setIsTabHidden(true)}
-                />
-              )}
               <Routes>
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
