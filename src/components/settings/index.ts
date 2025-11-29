@@ -9,3 +9,4 @@ export { InviteMemberDialog } from "./InviteMemberDialog";
 export { DeactivateMemberDialog } from "./DeactivateMemberDialog";
 export { AssignmentRulesManager } from "./AssignmentRulesManager";
 export { InstanceOnboardingGuide } from "./InstanceOnboardingGuide";
+export { SetupGuideTab } from "./SetupGuideTab";
