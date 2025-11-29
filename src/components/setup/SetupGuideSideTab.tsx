@@ -1,13 +1,14 @@
-import { Rocket } from "lucide-react";
+import { Rocket, X } from "lucide-react";
 import { useSetupProgress } from "@/hooks/useSetupProgress";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 interface SetupGuideSideTabProps {
   onClick: () => void;
+  onClose: () => void;
 }
 
-export const SetupGuideSideTab = ({ onClick }: SetupGuideSideTabProps) => {
+export const SetupGuideSideTab = ({ onClick, onClose }: SetupGuideSideTabProps) => {
   const { totalProgress, remainingSteps } = useSetupProgress();
 
   // Hide when setup is 100% complete
@@ -29,6 +30,16 @@ export const SetupGuideSideTab = ({ onClick }: SetupGuideSideTabProps) => {
       )}
       title={`${remainingSteps} passos restantes`}
     >
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
+        className="hover:bg-primary-foreground/20 rounded p-0.5 transition-colors"
+        title="Ocultar temporariamente"
+      >
+        <X className="h-3 w-3" />
+      </button>
       <Rocket className="h-3.5 w-3.5" />
       <span className="font-medium text-xs whitespace-nowrap">
         Guia de Setup
