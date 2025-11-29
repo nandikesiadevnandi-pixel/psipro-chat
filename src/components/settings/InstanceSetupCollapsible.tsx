@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import {
   ExternalLink,
@@ -18,7 +17,6 @@ import {
   Zap,
   Check,
   Rocket,
-  X,
   ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -26,7 +24,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useWhatsAppInstances } from "@/hooks/whatsapp";
 import confetti from "canvas-confetti";
 
-interface InstanceOnboardingGuideProps {
+interface InstanceSetupCollapsibleProps {
   onOpenAddDialog?: () => void;
 }
 
@@ -168,10 +166,10 @@ const getPhaseColor = (phase: string) => {
   }
 };
 
-export const InstanceOnboardingGuide = ({ 
+export const InstanceSetupCollapsible = ({ 
   onOpenAddDialog 
-}: InstanceOnboardingGuideProps) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+}: InstanceSetupCollapsibleProps) => {
+  const [isOpen, setIsOpen] = useState(false);
   const [completedSteps, setCompletedSteps] = useState<number[]>(() => {
     const saved = localStorage.getItem('whatsapp-onboarding-progress');
     return saved ? JSON.parse(saved) : [];
@@ -194,14 +192,13 @@ export const InstanceOnboardingGuide = ({
   // Abrir automaticamente se não houver instâncias e o checklist não estiver completo
   useEffect(() => {
     if (!isLoadingInstances && instances.length === 0 && completedSteps.length < onboardingSteps.length) {
-      setIsExpanded(true);
+      setIsOpen(true);
     }
-  }, [isLoadingInstances, instances.length]);
+  }, [isLoadingInstances, instances.length, completedSteps.length]);
 
   // Celebração ao completar todos os passos
   useEffect(() => {
     if (completedSteps.length === onboardingSteps.length && !hasCelebrated) {
-      // Primeiro disparo: do canto inferior direito
       confetti({
         particleCount: 100,
         angle: 60,
@@ -210,7 +207,6 @@ export const InstanceOnboardingGuide = ({
         colors: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6']
       });
 
-      // Segundo disparo: das laterais
       setTimeout(() => {
         confetti({
           particleCount: 50,
@@ -228,13 +224,11 @@ export const InstanceOnboardingGuide = ({
         });
       }, 250);
 
-      // Toast de parabéns
       toast({
         title: "🎉 Parabéns!",
         description: "Você completou toda a configuração!",
       });
 
-      // Marcar como celebrado
       setHasCelebrated(true);
       localStorage.setItem('whatsapp-onboarding-celebrated', JSON.stringify(true));
     }
@@ -262,50 +256,47 @@ export const InstanceOnboardingGuide = ({
   };
 
   const handleOpenAddInstance = () => {
-    setIsExpanded(false);
     onOpenAddDialog?.();
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-2">
-      {/* Painel expandido */}
-      {isExpanded && (
-        <div className="w-[420px] rounded-lg shadow-2xl border border-border overflow-hidden animate-in slide-in-from-bottom-4 bg-background">
-          {/* Header escuro */}
-          <div className="bg-primary text-primary-foreground p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Rocket className="h-5 w-5" />
-                <span className="font-semibold">
-                  {completedSteps.length === onboardingSteps.length 
-                    ? "Configuração Completa! 🎉" 
-                    : "Bem-vindo!"}
-                </span>
-              </div>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => setIsExpanded(false)}
-                className="h-8 w-8 hover:bg-primary-foreground/20 text-primary-foreground"
-              >
-                <X className="h-4 w-4" />
-              </Button>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <CollapsibleTrigger asChild>
+        <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground justify-between h-12">
+          <div className="flex items-center gap-2">
+            <Rocket className="h-4 w-4" />
+            <span className="font-semibold">
+              {completedSteps.length === onboardingSteps.length 
+                ? "Configuração Completa! 🎉" 
+                : "Configurar Evolution API"}
+            </span>
+            {remainingSteps > 0 && (
+              <span className="text-xs bg-primary-foreground/20 px-2 py-0.5 rounded-full">
+                {remainingSteps} passos
+              </span>
+            )}
+          </div>
+          <ChevronDown className={cn(
+            "h-4 w-4 transition-transform duration-200",
+            isOpen && "transform rotate-180"
+          )} />
+        </Button>
+      </CollapsibleTrigger>
+
+      <CollapsibleContent className="mt-4">
+        <div className="rounded-lg border border-border overflow-hidden bg-card">
+          {/* Header com progresso */}
+          <div className="bg-muted p-4 border-b">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium">Progresso da Configuração</span>
+              <span className="text-sm font-semibold">{progressPercent}%</span>
             </div>
-            <p className="text-sm opacity-90 mt-1">Checklist de Configuração</p>
-            
-            {/* Barra de progresso */}
-            <div className="flex items-center gap-2 mt-3">
-              <span className="text-sm font-medium">{progressPercent}%</span>
-              <Progress 
-                value={progressPercent} 
-                className="flex-1 bg-primary-foreground/20 [&>div]:bg-primary-foreground" 
-              />
-            </div>
+            <Progress value={progressPercent} className="h-2" />
           </div>
           
           {/* Lista de passos */}
-          <ScrollArea className="h-[400px] bg-background">
-            <Accordion type="single" collapsible className="p-2 space-y-1">
+          <div className="p-4 max-h-[500px] overflow-y-auto">
+            <Accordion type="single" collapsible className="space-y-2">
               {onboardingSteps.map((step) => {
                 const isCompleted = completedSteps.includes(step.id);
                 const Icon = step.icon;
@@ -399,7 +390,7 @@ export const InstanceOnboardingGuide = ({
                 );
               })}
             </Accordion>
-          </ScrollArea>
+          </div>
 
           {/* Footer */}
           <div className="border-t p-3 bg-muted/50">
@@ -422,23 +413,7 @@ export const InstanceOnboardingGuide = ({
             </Button>
           </div>
         </div>
-      )}
-      
-      {/* Botão flutuante (sempre visível) */}
-      <Button 
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="rounded-full shadow-lg px-6 h-12"
-        size="lg"
-      >
-        <Rocket className="mr-2 h-5 w-5" />
-        {isExpanded ? "Fechar" : "Checklist de configuração"}
-        {!isExpanded && remainingSteps > 0 && (
-          <Badge className="ml-2 bg-primary-foreground text-primary hover:bg-primary-foreground">
-            {remainingSteps}
-          </Badge>
-        )}
-        {!isExpanded && <ChevronDown className="ml-1 h-4 w-4" />}
-      </Button>
-    </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 };
