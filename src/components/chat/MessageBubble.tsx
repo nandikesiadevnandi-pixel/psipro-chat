@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Tables } from "@/integrations/supabase/types";
 import { format } from "date-fns";
-import { Check, CheckCheck, Clock, Reply, Pencil } from "lucide-react";
+import { Check, CheckCheck, Clock, Reply, Pencil, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { QuotedMessagePreview } from "./QuotedMessagePreview";
 import { ImageViewerModal } from "./ImageViewerModal";
@@ -167,6 +167,20 @@ export const MessageBubble = ({ message, reactions = [], onReply }: MessageBubbl
                 📄 {message.content || 'Documento'}
               </a>
             )}
+          </div>
+        );
+      
+      case 'contact':
+      case 'contacts':
+        return (
+          <div className="flex items-center gap-3 p-2 bg-muted/50 rounded-md min-w-[200px]">
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <User className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm truncate">{message.content}</p>
+              <p className="text-xs text-muted-foreground">Contato compartilhado</p>
+            </div>
           </div>
         );
       
