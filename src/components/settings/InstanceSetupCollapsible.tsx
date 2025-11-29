@@ -134,7 +134,7 @@ const onboardingSteps = [
       phase: "webhook",
       phaseLabel: "Configuração do Webhook",
       title: "Configurar Webhook",
-      description: "Acesse Events > Webhook e cole a URL no campo 'URL'. Ative 'Webhook base 64'.",
+      description: "Acesse Events > Webhook, clique em 'Enable' para ativar, e cole a URL no campo 'URL'. Ative 'Webhook base 64'.",
       icon: Settings
     },
   {
