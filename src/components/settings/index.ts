@@ -8,5 +8,5 @@ export { ChangeRoleDialog } from "./ChangeRoleDialog";
 export { InviteMemberDialog } from "./InviteMemberDialog";
 export { DeactivateMemberDialog } from "./DeactivateMemberDialog";
 export { AssignmentRulesManager } from "./AssignmentRulesManager";
-export { InstanceOnboardingGuide } from "./InstanceOnboardingGuide";
+export { InstanceSetupCollapsible } from "./InstanceSetupCollapsible";
 export { SetupGuideCollapsible } from "./SetupGuideCollapsible";
