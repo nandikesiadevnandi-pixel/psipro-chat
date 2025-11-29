@@ -38,6 +38,8 @@ function getMessageType(message: any): string {
   if (message.videoMessage) return 'video';
   if (message.documentMessage) return 'document';
   if (message.stickerMessage) return 'sticker';
+  if (message.contactMessage) return 'contact';
+  if (message.contactsArrayMessage) return 'contacts';
   return 'text';
 }
 
@@ -50,6 +52,15 @@ function isEditedMessage(message: any): boolean {
 function getMessageContent(message: any, type: string): string {
   if (message.conversation) return message.conversation;
   if (message.extendedTextMessage?.text) return message.extendedTextMessage.text;
+  
+  // Handle contact messages
+  if (message.contactMessage) {
+    return message.contactMessage.displayName || '📇 Contato';
+  }
+  if (message.contactsArrayMessage) {
+    const count = message.contactsArrayMessage.contacts?.length || 0;
+    return `📇 ${count} contato${count !== 1 ? 's' : ''}`;
+  }
   
   // For media messages, try to get caption
   const mediaMessage = message[`${type}Message`];
