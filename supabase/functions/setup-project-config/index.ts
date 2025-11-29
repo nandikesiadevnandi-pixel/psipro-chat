@@ -35,107 +35,12 @@ Deno.serve(async (req) => {
       throw new Error('Failed to store configuration');
     }
 
-    // 2. Remove old hardcoded cron jobs (using direct SQL via service role)
-    console.log('[setup-project-config] Removing old cron jobs...');
-    
-    try {
-      // Try to delete old cron jobs - may fail if they don't exist
-      await fetch(`${supabaseUrl}/rest/v1/rpc/exec_sql`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${supabaseServiceKey}`,
-          'Content-Type': 'application/json',
-          'apikey': supabaseServiceKey,
-        },
-        body: JSON.stringify({
-          query: "DELETE FROM cron.job WHERE jobname IN ('sync-contact-profiles-daily', 'check-instances-status');"
-        })
-      });
-      console.log('[setup-project-config] Old cron jobs removed (or didn\'t exist)');
-    } catch (e) {
-      console.log('[setup-project-config] Could not remove old cron jobs (may not have permissions)');
-    }
-
-    // 3. Create new dynamic cron jobs
-    console.log('[setup-project-config] Creating new dynamic cron jobs...');
-
-    let cronJobsCreated = false;
-
-    try {
-      // Create check-instances-status job (every 5 minutes)
-      const cronSql1 = `
-        SELECT cron.schedule(
-          'check-instances-status',
-          '*/5 * * * *',
-          $$
-          SELECT net.http_post(
-            url := (SELECT value FROM public.project_config WHERE key = 'project_url') 
-                   || '/functions/v1/check-instances-status',
-            headers := jsonb_build_object(
-              'Content-Type', 'application/json',
-              'Authorization', 'Bearer ' || (SELECT value FROM public.project_config WHERE key = 'anon_key')
-            ),
-            body := jsonb_build_object('time', now())
-          );
-          $$
-        );
-      `;
-
-      await fetch(`${supabaseUrl}/rest/v1/rpc/exec_sql`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${supabaseServiceKey}`,
-          'Content-Type': 'application/json',
-          'apikey': supabaseServiceKey,
-        },
-        body: JSON.stringify({ query: cronSql1 })
-      });
-
-      console.log('[setup-project-config] ✓ check-instances-status cron job created');
-
-      // Create sync-contact-profiles-daily job (daily at 3 AM)
-      const cronSql2 = `
-        SELECT cron.schedule(
-          'sync-contact-profiles-daily',
-          '0 3 * * *',
-          $$
-          SELECT net.http_post(
-            url := (SELECT value FROM public.project_config WHERE key = 'project_url') 
-                   || '/functions/v1/sync-contact-profiles',
-            headers := jsonb_build_object(
-              'Content-Type', 'application/json',
-              'Authorization', 'Bearer ' || (SELECT value FROM public.project_config WHERE key = 'anon_key')
-            ),
-            body := jsonb_build_object('time', now())
-          );
-          $$
-        );
-      `;
-
-      await fetch(`${supabaseUrl}/rest/v1/rpc/exec_sql`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${supabaseServiceKey}`,
-          'Content-Type': 'application/json',
-          'apikey': supabaseServiceKey,
-        },
-        body: JSON.stringify({ query: cronSql2 })
-      });
-
-      console.log('[setup-project-config] ✓ sync-contact-profiles-daily cron job created');
-      cronJobsCreated = true;
-
-    } catch (e) {
-      console.error('[setup-project-config] Error creating cron jobs:', e);
-    }
-
     console.log('[setup-project-config] Configuration completed successfully!');
 
     return new Response(
       JSON.stringify({
         success: true,
         message: 'Project configuration completed successfully',
-        cron_jobs_created: cronJobsCreated,
       }),
       {
         status: 200,
