@@ -28,7 +28,7 @@ export const SetupGuideCollapsible = () => {
   const handleStepAction = (stepId: string) => {
     switch (stepId) {
       case 'connect-instance':
-        // Navega para aba de instâncias
+        navigate('/whatsapp/settings?tab=instances');
         break;
       case 'invite-member':
         navigate('/whatsapp/settings?tab=team');

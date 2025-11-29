@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,8 +8,15 @@ import { MacrosManager } from "@/components/macros";
 import { useAuth } from "@/contexts/AuthContext";
 
 const WhatsAppSettings = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const { isAdmin } = useAuth();
+  
+  const currentTab = searchParams.get('tab') || 'setup';
+
+  const handleTabChange = (value: string) => {
+    setSearchParams({ tab: value });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -34,7 +41,7 @@ const WhatsAppSettings = () => {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="setup" className="w-full">
+        <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
           <TabsList>
             <TabsTrigger value="setup">Setup</TabsTrigger>
             <TabsTrigger value="instances">Instâncias</TabsTrigger>
