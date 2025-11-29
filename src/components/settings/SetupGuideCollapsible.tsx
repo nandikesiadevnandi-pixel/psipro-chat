@@ -6,9 +6,8 @@ import { SetupStepCard } from "@/components/setup/SetupStepCard";
 import { useSetupProgress } from "@/hooks/useSetupProgress";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
-import { Rocket, ChevronDown, RefreshCw } from "lucide-react";
+import { Rocket, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export const SetupGuideCollapsible = () => {
   const { 
@@ -20,7 +19,6 @@ export const SetupGuideCollapsible = () => {
     resetProgress
   } = useSetupProgress();
   
-  const [isOpen, setIsOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(categories[0]?.id || 'initial');
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -30,8 +28,7 @@ export const SetupGuideCollapsible = () => {
   const handleStepAction = (stepId: string) => {
     switch (stepId) {
       case 'connect-instance':
-        // Já estamos na aba de instâncias, apenas fecha o collapsible
-        setIsOpen(false);
+        // Navega para aba de instâncias
         break;
       case 'invite-member':
         navigate('/whatsapp/settings?tab=team');
@@ -65,117 +62,109 @@ export const SetupGuideCollapsible = () => {
   };
 
   return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <CollapsibleTrigger asChild>
-        <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground justify-between">
-          <div className="flex items-center gap-2">
-            <Rocket className="h-4 w-4" />
-            <span>Checklist de configuração</span>
-            {completedCount < totalSteps && (
-              <span className="text-xs bg-primary-foreground/20 px-2 py-0.5 rounded-full">
-                {completedCount}/{totalSteps}
-              </span>
-            )}
-          </div>
-          <ChevronDown className={cn(
-            "h-4 w-4 transition-transform duration-200",
-            isOpen && "rotate-180"
-          )} />
-        </Button>
-      </CollapsibleTrigger>
+    <div className="space-y-2">
+      <div className="w-full bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-3 rounded-md">
+        <div className="flex items-center gap-2">
+          <Rocket className="h-4 w-4" />
+          <span className="font-medium">Checklist de configuração</span>
+          {completedCount < totalSteps && (
+            <span className="text-xs bg-primary-foreground/20 px-2 py-0.5 rounded-full">
+              {completedCount}/{totalSteps}
+            </span>
+          )}
+        </div>
+      </div>
       
-      <CollapsibleContent>
-        <div className="flex border rounded-lg overflow-hidden mt-2 min-h-[500px]">
-          {/* Sidebar */}
-          <div className="w-64 border-r border-border bg-muted/30 p-4 space-y-4">
-            {/* Overall Progress */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Progresso geral</span>
-                <span className="font-semibold">{totalProgress}%</span>
-              </div>
-              <Progress value={totalProgress} className="h-2" />
-              <p className="text-xs text-muted-foreground">
-                {completedCount} de {totalSteps} passos concluídos
-              </p>
+      <div className="flex border rounded-lg overflow-hidden min-h-[500px]">
+        {/* Sidebar */}
+        <div className="w-64 border-r border-border bg-muted/30 p-4 space-y-4">
+          {/* Overall Progress */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Progresso geral</span>
+              <span className="font-semibold">{totalProgress}%</span>
             </div>
+            <Progress value={totalProgress} className="h-2" />
+            <p className="text-xs text-muted-foreground">
+              {completedCount} de {totalSteps} passos concluídos
+            </p>
+          </div>
 
-            {/* Categories */}
-            <div className="space-y-1">
-              {categories.map((category) => (
-                <button
-                  key={category.id}
-                  onClick={() => setSelectedCategory(category.id)}
+          {/* Categories */}
+          <div className="space-y-1">
+            {categories.map((category) => (
+              <button
+                key={category.id}
+                onClick={() => setSelectedCategory(category.id)}
+                className={cn(
+                  "w-full text-left px-3 py-2 rounded-md text-sm transition-colors",
+                  selectedCategory === category.id
+                    ? "bg-primary text-primary-foreground"
+                    : "hover:bg-muted"
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">{category.title}</span>
+                  <span className={cn(
+                    "text-xs",
+                    selectedCategory === category.id 
+                      ? "text-primary-foreground/80" 
+                      : "text-muted-foreground"
+                  )}>
+                    {category.progress}%
+                  </span>
+                </div>
+                <Progress 
+                  value={category.progress} 
                   className={cn(
-                    "w-full text-left px-3 py-2 rounded-md text-sm transition-colors",
-                    selectedCategory === category.id
-                      ? "bg-primary text-primary-foreground"
-                      : "hover:bg-muted"
+                    "h-1 mt-1",
+                    selectedCategory === category.id && "[&>div]:bg-primary-foreground"
                   )}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">{category.title}</span>
-                    <span className={cn(
-                      "text-xs",
-                      selectedCategory === category.id 
-                        ? "text-primary-foreground/80" 
-                        : "text-muted-foreground"
-                    )}>
-                      {category.progress}%
-                    </span>
-                  </div>
-                  <Progress 
-                    value={category.progress} 
-                    className={cn(
-                      "h-1 mt-1",
-                      selectedCategory === category.id && "[&>div]:bg-primary-foreground"
-                    )}
-                  />
-                </button>
+                />
+              </button>
+            ))}
+          </div>
+
+          {/* Reset Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleReset}
+            className="w-full justify-start text-xs"
+          >
+            <RefreshCw className="mr-2 h-3 w-3" />
+            Resetar progresso
+          </Button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 flex flex-col min-h-0">
+          {/* Header */}
+          <div className="p-6 border-b border-border">
+            <h3 className="text-lg font-semibold">{currentCategory?.title}</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              {currentCategory?.steps.filter(s => s.completed).length} de {currentCategory?.steps.length} passos concluídos
+            </p>
+          </div>
+
+          {/* Steps */}
+          <ScrollArea className="flex-1 p-6">
+            <div className="space-y-3">
+              {currentCategory?.steps.map((step) => (
+                <SetupStepCard
+                  key={step.id}
+                  step={{
+                    ...step,
+                    actionLabel: step.completed ? undefined : getActionLabel(step.id),
+                  }}
+                  onAction={() => handleStepAction(step.id)}
+                />
               ))}
             </div>
-
-            {/* Reset Button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleReset}
-              className="w-full justify-start text-xs"
-            >
-              <RefreshCw className="mr-2 h-3 w-3" />
-              Resetar progresso
-            </Button>
-          </div>
-
-          {/* Content */}
-          <div className="flex-1 flex flex-col min-h-0">
-            {/* Header */}
-            <div className="p-6 border-b border-border">
-              <h3 className="text-lg font-semibold">{currentCategory?.title}</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                {currentCategory?.steps.filter(s => s.completed).length} de {currentCategory?.steps.length} passos concluídos
-              </p>
-            </div>
-
-            {/* Steps */}
-            <ScrollArea className="flex-1 p-6">
-              <div className="space-y-3">
-                {currentCategory?.steps.map((step) => (
-                  <SetupStepCard
-                    key={step.id}
-                    step={{
-                      ...step,
-                      actionLabel: step.completed ? undefined : getActionLabel(step.id),
-                    }}
-                    onAction={() => handleStepAction(step.id)}
-                  />
-                ))}
-              </div>
-            </ScrollArea>
-          </div>
+          </ScrollArea>
         </div>
-      </CollapsibleContent>
-    </Collapsible>
+      </div>
+    </div>
   );
 };
 
