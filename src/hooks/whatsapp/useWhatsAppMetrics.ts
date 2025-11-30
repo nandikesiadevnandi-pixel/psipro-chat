@@ -34,6 +34,21 @@ export interface WhatsAppMetrics {
     closedConversations: number;
     avgResponseTimeMinutes: number;
   }>;
+  // New metrics
+  totalMessages: number;
+  sentMessages: number;
+  receivedMessages: number;
+  uniqueContacts: number;
+  avgMessagesPerConversation: number;
+  queuedConversations: number;
+  avgResolutionTimeMinutes: number;
+  engagementRate: number;
+  messageTypeDistribution: { type: string; count: number; percentage: number }[];
+  hourlyActivity: { hour: number; count: number }[];
+  weekdayActivity: { weekday: string; count: number }[];
+  topContacts: { contactId: string; contactName: string; messageCount: number }[];
+  instanceComparison: { instanceId: string; instanceName: string; conversations: number; messages: number; contacts: number }[];
+  dailyMessageTrend: { date: string; sent: number; received: number }[];
   // Previous period comparison
   previousPeriod: {
     total: number;
@@ -415,6 +430,162 @@ export const useWhatsAppMetrics = (filters: WhatsAppMetricsFilters) => {
       // Calculate previous period resolution rate
       const previousResolutionRate = previousTotal > 0 ? (previousClosed / previousTotal) * 100 : 0;
 
+      // Calculate new metrics
+      const { data: allMessages } = await supabase
+        .from('whatsapp_messages')
+        .select('id, conversation_id, is_from_me, message_type, timestamp, contact:whatsapp_conversations!inner(contact_id, instance_id, whatsapp_contacts!inner(id, name, phone_number), whatsapp_instances!inner(id, name))')
+        .in('conversation_id', conversationIds);
+
+      const totalMessages = allMessages?.length || 0;
+      const sentMessages = allMessages?.filter(m => m.is_from_me).length || 0;
+      const receivedMessages = allMessages?.filter(m => !m.is_from_me).length || 0;
+      
+      // Calculate unique contacts
+      const uniqueContactIds = new Set(conversations?.map(c => c.contact_id));
+      const uniqueContacts = uniqueContactIds.size;
+
+      // Calculate average messages per conversation
+      const avgMessagesPerConversation = conversationIds.length > 0 ? totalMessages / conversationIds.length : 0;
+
+      // Calculate queued conversations (no assigned agent)
+      const { data: queuedConvs } = await supabase
+        .from('whatsapp_conversations')
+        .select('id', { count: 'exact', head: true })
+        .is('assigned_to', null)
+        .eq('status', 'active');
+      const queuedConversations = queuedConvs || 0;
+
+      // Calculate average resolution time (for closed conversations)
+      const closedConvs = conversations?.filter(c => c.status === 'closed') || [];
+      const resolutionTimes = closedConvs.map(conv => {
+        const durationMs = new Date(conv.last_message_at || conv.created_at).getTime() - new Date(conv.created_at).getTime();
+        return durationMs / (1000 * 60); // minutes
+      });
+      const avgResolutionTimeMinutes = resolutionTimes.length > 0 
+        ? resolutionTimes.reduce((sum, t) => sum + t, 0) / resolutionTimes.length 
+        : 0;
+
+      // Calculate engagement rate
+      const engagementRate = sentMessages > 0 ? (receivedMessages / sentMessages) * 100 : 0;
+
+      // Calculate message type distribution
+      const messageTypeCounts: Record<string, number> = {};
+      allMessages?.forEach(msg => {
+        const type = msg.message_type || 'text';
+        messageTypeCounts[type] = (messageTypeCounts[type] || 0) + 1;
+      });
+      const messageTypeDistribution = Object.entries(messageTypeCounts).map(([type, count]) => ({
+        type,
+        count,
+        percentage: totalMessages > 0 ? (count / totalMessages) * 100 : 0
+      }));
+
+      // Calculate hourly activity (0-23h)
+      const hourlyCounts = new Array(24).fill(0);
+      allMessages?.forEach(msg => {
+        const hour = new Date(msg.timestamp).getHours();
+        hourlyCounts[hour]++;
+      });
+      const hourlyActivity = hourlyCounts.map((count, hour) => ({ hour, count }));
+
+      // Calculate weekday activity
+      const weekdayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+      const weekdayCounts = new Array(7).fill(0);
+      allMessages?.forEach(msg => {
+        const day = new Date(msg.timestamp).getDay();
+        weekdayCounts[day]++;
+      });
+      const weekdayActivity = weekdayCounts.map((count, idx) => ({ 
+        weekday: weekdayNames[idx], 
+        count 
+      }));
+
+      // Calculate top 10 contacts by message count
+      const contactMessageCounts: Record<string, { name: string; count: number }> = {};
+      allMessages?.forEach(msg => {
+        const contact = (msg as any).contact;
+        if (contact && contact.whatsapp_contacts) {
+          const contactData = contact.whatsapp_contacts;
+          const contactId = contactData.id;
+          if (!contactMessageCounts[contactId]) {
+            contactMessageCounts[contactId] = {
+              name: contactData.name || contactData.phone_number,
+              count: 0
+            };
+          }
+          contactMessageCounts[contactId].count++;
+        }
+      });
+      const topContacts = Object.entries(contactMessageCounts)
+        .map(([contactId, data]) => ({
+          contactId,
+          contactName: data.name,
+          messageCount: data.count
+        }))
+        .sort((a, b) => b.messageCount - a.messageCount)
+        .slice(0, 10);
+
+      // Calculate instance comparison (if no instance filter applied)
+      let instanceComparison: Array<{ instanceId: string; instanceName: string; conversations: number; messages: number; contacts: number }> = [];
+      if (!filters.instanceId) {
+        const instanceStats: Record<string, { name: string; conversations: Set<string>; messages: number; contacts: Set<string> }> = {};
+        
+        conversations?.forEach(conv => {
+          if (!instanceStats[conv.instance_id]) {
+            instanceStats[conv.instance_id] = {
+              name: '',
+              conversations: new Set(),
+              messages: 0,
+              contacts: new Set()
+            };
+          }
+          instanceStats[conv.instance_id].conversations.add(conv.id);
+          instanceStats[conv.instance_id].contacts.add(conv.contact_id);
+        });
+
+        allMessages?.forEach(msg => {
+          const contact = (msg as any).contact;
+          if (contact && contact.whatsapp_instances) {
+            const instanceId = contact.instance_id;
+            const instanceName = contact.whatsapp_instances.name;
+            if (instanceStats[instanceId]) {
+              instanceStats[instanceId].name = instanceName;
+              instanceStats[instanceId].messages++;
+            }
+          }
+        });
+
+        instanceComparison = Object.entries(instanceStats).map(([instanceId, data]) => ({
+          instanceId,
+          instanceName: data.name || 'Instância',
+          conversations: data.conversations.size,
+          messages: data.messages,
+          contacts: data.contacts.size
+        }));
+      }
+
+      // Calculate daily message trend (sent vs received)
+      const messageDays = eachDayOfInterval({ start: from, end: to });
+      const dailyMessagesByDate = allMessages?.reduce((acc: Record<string, { sent: number; received: number }>, msg: any) => {
+        const date = format(new Date(msg.timestamp), 'dd/MM');
+        if (!acc[date]) acc[date] = { sent: 0, received: 0 };
+        if (msg.is_from_me) {
+          acc[date].sent++;
+        } else {
+          acc[date].received++;
+        }
+        return acc;
+      }, {}) || {};
+
+      const dailyMessageTrend = messageDays.map(day => {
+        const dateKey = format(day, 'dd/MM');
+        return {
+          date: dateKey,
+          sent: dailyMessagesByDate[dateKey]?.sent || 0,
+          received: dailyMessagesByDate[dateKey]?.received || 0
+        };
+      });
+
       return {
         total,
         active,
@@ -429,6 +600,20 @@ export const useWhatsAppMetrics = (filters: WhatsAppMetricsFilters) => {
         sentimentDistribution,
         longestConversations,
         agentPerformance,
+        totalMessages,
+        sentMessages,
+        receivedMessages,
+        uniqueContacts,
+        avgMessagesPerConversation,
+        queuedConversations,
+        avgResolutionTimeMinutes,
+        engagementRate,
+        messageTypeDistribution,
+        hourlyActivity,
+        weekdayActivity,
+        topContacts,
+        instanceComparison,
+        dailyMessageTrend,
         previousPeriod: {
           total: previousTotal,
           active: previousActive,
