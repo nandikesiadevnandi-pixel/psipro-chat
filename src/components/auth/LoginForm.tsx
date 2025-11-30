@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +22,7 @@ export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const { signIn } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -38,6 +40,9 @@ export function LoginForm() {
           title: 'Erro ao fazer login',
           description: translateAuthError(error.message),
         });
+      } else {
+        // Navigate on success - ProtectedRoute will handle redirect to setup if needed
+        navigate('/whatsapp');
       }
     } catch (error) {
       console.error('Login error:', error);

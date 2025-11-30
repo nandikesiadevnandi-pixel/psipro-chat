@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +27,7 @@ export function SignupForm() {
   const [isLoading, setIsLoading] = useState(false);
   const { signUp } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   const { register, handleSubmit, formState: { errors } } = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
@@ -43,6 +45,9 @@ export function SignupForm() {
           title: 'Erro ao criar conta',
           description: translateAuthError(error.message),
         });
+      } else {
+        // Navigate on success - ProtectedRoute will handle redirect to setup if needed
+        navigate('/whatsapp');
       }
     } catch (error) {
       console.error('Signup error:', error);

@@ -1,5 +1,5 @@
 import { ReactNode, useEffect } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
@@ -8,8 +8,17 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, shouldRedirectToSetup } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  // Redirect admin to setup on first login
+  useEffect(() => {
+    if (!isLoading && user && shouldRedirectToSetup && location.pathname !== '/whatsapp/settings') {
+      console.log('[ProtectedRoute] Redirecting admin to setup...');
+      navigate('/whatsapp/settings?tab=setup', { replace: true });
+    }
+  }, [user, isLoading, shouldRedirectToSetup, location.pathname, navigate]);
 
   // Show loading state while checking auth
   if (isLoading) {
