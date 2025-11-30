@@ -166,6 +166,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Handle tab/browser close - mark user as offline
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (user && session?.access_token) {
+        // Use fetch with keepalive for reliable offline status update on tab close
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`, {
+          method: 'PATCH',
+          keepalive: true,
+          headers: {
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({ status: 'offline' })
+        }).catch(() => {
+          // Ignore errors on page unload
+        });
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [user, session]);
+
   // Auto-setup infrastructure for remix
   const setupRemixInfrastructure = async () => {
     try {
@@ -194,12 +219,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [role, isConfigured, isCheckingConfig, setupProject]);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (!error) {
+    if (!error && data.user) {
+      // Update status to online after successful login
+      await supabase
+        .from('profiles')
+        .update({ status: 'online' })
+        .eq('id', data.user.id);
+
       toast({
         title: "Login realizado com sucesso",
         description: "Bem-vindo de volta!",
@@ -245,6 +276,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    // Update status to offline before logout
+    if (user) {
+      await supabase
+        .from('profiles')
+        .update({ status: 'offline' })
+        .eq('id', user.id);
+    }
+
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
