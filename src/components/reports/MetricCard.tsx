@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LucideIcon, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { LucideIcon, TrendingUp, TrendingDown, Minus, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ReactNode } from 'react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface MetricCardProps {
   title: string;
@@ -9,13 +10,14 @@ interface MetricCardProps {
   icon?: LucideIcon;
   className?: string;
   children?: ReactNode;
+  info?: string;
   trend?: {
     value: number;
     isPercentage?: boolean;
   };
 }
 
-export function MetricCard({ title, value, icon: Icon, className, children, trend }: MetricCardProps) {
+export function MetricCard({ title, value, icon: Icon, className, children, info, trend }: MetricCardProps) {
   const getTrendDisplay = () => {
     if (!trend) return null;
 
@@ -46,7 +48,21 @@ export function MetricCard({ title, value, icon: Icon, className, children, tren
   return (
     <Card className={cn("h-full", className)}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <div className="flex items-center gap-1.5">
+          <CardTitle className="text-sm font-medium">{title}</CardTitle>
+          {info && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[280px]">
+                  <p className="text-xs">{info}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
         {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
       </CardHeader>
       <CardContent>

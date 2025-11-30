@@ -153,6 +153,7 @@ export default function WhatsAppRelatorio() {
                 title="Total de Conversas"
                 value={metrics?.total || 0}
                 icon={MessageSquare}
+                info="Número total de conversas no período selecionado"
                 trend={{
                   value: metrics?.previousPeriod 
                     ? ((metrics.total - metrics.previousPeriod.total) / (metrics.previousPeriod.total || 1)) * 100
@@ -164,6 +165,7 @@ export default function WhatsAppRelatorio() {
                 title="Conversas Abertas"
                 value={metrics?.active || 0}
                 icon={Clock}
+                info="Conversas com status 'open' que ainda estão em atendimento"
                 trend={{
                   value: metrics?.previousPeriod 
                     ? ((metrics.active - metrics.previousPeriod.active) / (metrics.previousPeriod.active || 1)) * 100
@@ -175,6 +177,7 @@ export default function WhatsAppRelatorio() {
                 title="Conversas Fechadas"
                 value={metrics?.closed || 0}
                 icon={CheckCircle2}
+                info="Conversas com status 'closed' que foram finalizadas"
                 trend={{
                   value: metrics?.previousPeriod 
                     ? ((metrics.closed - metrics.previousPeriod.closed) / (metrics.previousPeriod.closed || 1)) * 100
@@ -186,6 +189,7 @@ export default function WhatsAppRelatorio() {
                 title="Conversas Arquivadas"
                 value={metrics?.archived || 0}
                 icon={Archive}
+                info="Conversas com status 'archived'"
                 trend={{
                   value: metrics?.previousPeriod 
                     ? ((metrics.archived - metrics.previousPeriod.archived) / (metrics.previousPeriod.archived || 1)) * 100
@@ -197,6 +201,7 @@ export default function WhatsAppRelatorio() {
                 title="Tempo Médio de Resposta"
                 value={formatDuration(metrics?.avgResponseTimeMinutes || 0)}
                 icon={Timer}
+                info="Tempo médio entre mensagem do cliente e resposta do agente"
                 trend={{
                   value: metrics?.previousPeriod 
                     ? ((metrics.avgResponseTimeMinutes - metrics.previousPeriod.avgResponseTimeMinutes) / (metrics.previousPeriod.avgResponseTimeMinutes || 1)) * 100
@@ -212,21 +217,25 @@ export default function WhatsAppRelatorio() {
                 title="Total de Mensagens"
                 value={metrics?.totalMessages || 0}
                 icon={MessagesSquare}
+                info="Soma de todas as mensagens enviadas e recebidas no período"
               />
               <MetricCard
                 title="Mensagens Enviadas"
                 value={metrics?.sentMessages || 0}
                 icon={Send}
+                info="Mensagens enviadas pelos agentes (is_from_me = true)"
               />
               <MetricCard
                 title="Mensagens Recebidas"
                 value={metrics?.receivedMessages || 0}
                 icon={MessageCircle}
+                info="Mensagens recebidas dos clientes (is_from_me = false)"
               />
               <MetricCard
                 title="Média Msgs/Conversa"
                 value={(metrics?.avgMessagesPerConversation || 0).toFixed(1)}
                 icon={TrendingUp}
+                info="Total de mensagens dividido pelo número de conversas"
               />
             </div>
 
@@ -236,6 +245,7 @@ export default function WhatsAppRelatorio() {
                 title="Taxa de Resolução"
                 value={`${(metrics?.resolutionRate || 0).toFixed(1)}%`}
                 icon={CheckCircle2}
+                info="Percentual de conversas fechadas em relação ao total de conversas"
                 trend={{
                   value: metrics?.previousPeriod 
                     ? (metrics.resolutionRate - metrics.previousPeriod.resolutionRate)
@@ -247,6 +257,7 @@ export default function WhatsAppRelatorio() {
                 title="Tempo de 1ª Resposta"
                 value={formatDuration(metrics?.avgFirstResponseTimeMinutes || 0)}
                 icon={Zap}
+                info="Tempo médio entre primeira mensagem do cliente e primeira resposta do agente"
                 trend={{
                   value: metrics?.previousPeriod && metrics.previousPeriod.avgFirstResponseTimeMinutes > 0
                     ? ((metrics.avgFirstResponseTimeMinutes - metrics.previousPeriod.avgFirstResponseTimeMinutes) / metrics.previousPeriod.avgFirstResponseTimeMinutes) * 100
@@ -258,11 +269,13 @@ export default function WhatsAppRelatorio() {
                 title="Conversas na Fila"
                 value={metrics?.queuedConversations || 0}
                 icon={Inbox}
+                info="Conversas sem agente atribuído aguardando atendimento"
               />
               <MetricCard
                 title="Tempo Médio Atendimento"
                 value={formatDuration(metrics?.avgResolutionTimeMinutes || 0)}
                 icon={Hourglass}
+                info="Duração média das conversas desde abertura até fechamento"
               />
             </div>
 
@@ -272,11 +285,13 @@ export default function WhatsAppRelatorio() {
                 title="Contatos Únicos"
                 value={metrics?.uniqueContacts || 0}
                 icon={Users}
+                info="Número de contatos distintos que interagiram no período"
               />
               <MetricCard
                 title="Taxa de Engajamento"
                 value={`${(metrics?.engagementRate || 0).toFixed(1)}%`}
                 icon={TrendingUp}
+                info="Proporção entre mensagens recebidas e enviadas (recebidas ÷ enviadas × 100)"
               />
             </div>
 
