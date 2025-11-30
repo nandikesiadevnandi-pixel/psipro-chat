@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { MessageSquare, Clock, CheckCircle2, Archive, Timer, ArrowLeft, Zap, TrendingUp } from 'lucide-react';
+import { MessageSquare, Clock, CheckCircle2, Archive, Timer, ArrowLeft, Zap, TrendingUp, Send, MessageCircle, Users, MessagesSquare, Inbox, Hourglass } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useInstanceStatusMonitor } from '@/hooks/useInstanceStatusMonitor';
 import { DisconnectedInstancesBanner } from '@/components/notifications/DisconnectedInstancesBanner';
@@ -13,7 +13,13 @@ import {
   MetricsGridSkeleton,
   ChartsGridSkeleton,
   AgentFilter,
-  AgentPerformanceChart
+  AgentPerformanceChart,
+  MessageTypeChart,
+  HourlyActivityChart,
+  WeekdayActivityChart,
+  TopContactsChart,
+  InstanceComparisonChart,
+  MessageFlowChart
 } from '@/components/reports';
 import { TopicsDistributionChart } from '@/components/chat/topics/TopicsDistributionChart';
 import { InstanceFilter } from '@/components/conversations/InstanceFilter';
@@ -141,7 +147,7 @@ export default function WhatsAppRelatorio() {
           </>
         ) : (
           <>
-            {/* Metrics Grid */}
+            {/* Métricas Principais - Conversas */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
               <MetricCard
                 title="Total de Conversas"
@@ -200,12 +206,36 @@ export default function WhatsAppRelatorio() {
               />
             </div>
 
-            {/* Secondary Metrics */}
-            <div className="grid gap-4 md:grid-cols-2">
+            {/* Métricas de Mensagens */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <MetricCard
+                title="Total de Mensagens"
+                value={metrics?.totalMessages || 0}
+                icon={MessagesSquare}
+              />
+              <MetricCard
+                title="Mensagens Enviadas"
+                value={metrics?.sentMessages || 0}
+                icon={Send}
+              />
+              <MetricCard
+                title="Mensagens Recebidas"
+                value={metrics?.receivedMessages || 0}
+                icon={MessageCircle}
+              />
+              <MetricCard
+                title="Média Msgs/Conversa"
+                value={(metrics?.avgMessagesPerConversation || 0).toFixed(1)}
+                icon={TrendingUp}
+              />
+            </div>
+
+            {/* Métricas Operacionais */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <MetricCard
                 title="Taxa de Resolução"
                 value={`${(metrics?.resolutionRate || 0).toFixed(1)}%`}
-                icon={TrendingUp}
+                icon={CheckCircle2}
                 trend={{
                   value: metrics?.previousPeriod 
                     ? (metrics.resolutionRate - metrics.previousPeriod.resolutionRate)
@@ -224,9 +254,33 @@ export default function WhatsAppRelatorio() {
                   isPercentage: true
                 }}
               />
+              <MetricCard
+                title="Conversas na Fila"
+                value={metrics?.queuedConversations || 0}
+                icon={Inbox}
+              />
+              <MetricCard
+                title="Tempo Médio Atendimento"
+                value={formatDuration(metrics?.avgResolutionTimeMinutes || 0)}
+                icon={Hourglass}
+              />
             </div>
 
-            {/* Charts Grid */}
+            {/* Contatos e Engajamento */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <MetricCard
+                title="Contatos Únicos"
+                value={metrics?.uniqueContacts || 0}
+                icon={Users}
+              />
+              <MetricCard
+                title="Taxa de Engajamento"
+                value={`${(metrics?.engagementRate || 0).toFixed(1)}%`}
+                icon={TrendingUp}
+              />
+            </div>
+
+            {/* Charts Grid - 2 colunas */}
             <div className="grid gap-6 md:grid-cols-2">
               {/* Evolution Chart */}
               <Card>
@@ -252,6 +306,9 @@ export default function WhatsAppRelatorio() {
                 </CardContent>
               </Card>
 
+              {/* Message Flow Chart */}
+              <MessageFlowChart data={metrics?.dailyMessageTrend || []} />
+
               {/* Status Distribution Chart */}
               <StatusDistributionChart data={metrics?.statusDistribution || []} />
 
@@ -260,10 +317,27 @@ export default function WhatsAppRelatorio() {
 
               {/* Topics Distribution Chart */}
               <TopicsDistributionChart data={metrics?.topicsDistribution || []} />
+
+              {/* Message Type Chart */}
+              <MessageTypeChart data={metrics?.messageTypeDistribution || []} />
+
+              {/* Hourly Activity Chart */}
+              <HourlyActivityChart data={metrics?.hourlyActivity || []} />
+
+              {/* Weekday Activity Chart */}
+              <WeekdayActivityChart data={metrics?.weekdayActivity || []} />
             </div>
+
+            {/* Instance Comparison Chart - Full Width */}
+            {!selectedInstance && (
+              <InstanceComparisonChart data={metrics?.instanceComparison || []} />
+            )}
 
             {/* Agent Performance Chart */}
             <AgentPerformanceChart data={metrics?.agentPerformance || []} />
+
+            {/* Top Contacts Chart */}
+            <TopContactsChart data={metrics?.topContacts || []} />
 
             {/* Longest Conversations Table */}
             <LongestConversationsTable conversations={metrics?.longestConversations || []} />
