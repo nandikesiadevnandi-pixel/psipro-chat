@@ -75,6 +75,7 @@ serve(async (req) => {
     }
 
     const audioBuffer = await audioResponse.arrayBuffer();
+    const base64Audio = btoa(String.fromCharCode(...new Uint8Array(audioBuffer)));
 
     // Call Lovable AI Gateway for transcription
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -82,21 +83,35 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
-    console.log(`[transcribe-audio] Sending to Lovable AI Whisper for transcription`);
+    console.log(`[transcribe-audio] Sending to Lovable AI (GPT-5 with input_audio) for transcription`);
     
-    // Create FormData with audio file for Whisper endpoint
-    const audioBlob = new Blob([audioBuffer], { type: message.media_mimetype || 'audio/ogg' });
-    const formData = new FormData();
-    formData.append('file', audioBlob, 'audio.ogg');
-    formData.append('model', 'whisper-1');
-    formData.append('language', 'pt');
-    
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/audio/transcriptions', {
+    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
       },
-      body: formData,
+      body: JSON.stringify({
+        model: 'openai/gpt-5',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: 'Transcreva o áudio em português brasileiro. Retorne apenas o texto transcrito, sem comentários adicionais.'
+              },
+              {
+                type: 'input_audio',
+                input_audio: {
+                  data: base64Audio,
+                  format: 'wav'
+                }
+              }
+            ]
+          }
+        ],
+      }),
     });
 
     if (!aiResponse.ok) {
@@ -131,10 +146,10 @@ serve(async (req) => {
     }
 
     const aiData = await aiResponse.json();
-    const transcription = aiData.text?.trim();
+    const transcription = aiData.choices?.[0]?.message?.content?.trim();
 
     if (!transcription) {
-      throw new Error('No transcription returned from Whisper API');
+      throw new Error('No transcription returned from AI');
     }
 
     console.log(`[transcribe-audio] Transcription completed: ${transcription.substring(0, 50)}...`);
