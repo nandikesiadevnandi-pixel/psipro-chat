@@ -8,6 +8,10 @@ verify_jwt = false
 [functions.setup-project-config]
 verify_jwt = true
 
+# Transcrição de áudio via Lovable AI
+[functions.transcribe-audio]
+verify_jwt = true
+
 # Todas as outras funções - habilitar JWT
 [functions.send-whatsapp-message]
 verify_jwt = true

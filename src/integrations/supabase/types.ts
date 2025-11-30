@@ -553,6 +553,7 @@ export type Database = {
       }
       whatsapp_messages: {
         Row: {
+          audio_transcription: string | null
           content: string
           conversation_id: string
           created_at: string
@@ -569,8 +570,10 @@ export type Database = {
           remote_jid: string
           status: string | null
           timestamp: string
+          transcription_status: string | null
         }
         Insert: {
+          audio_transcription?: string | null
           content: string
           conversation_id: string
           created_at?: string
@@ -587,8 +590,10 @@ export type Database = {
           remote_jid: string
           status?: string | null
           timestamp: string
+          transcription_status?: string | null
         }
         Update: {
+          audio_transcription?: string | null
           content?: string
           conversation_id?: string
           created_at?: string
@@ -605,6 +610,7 @@ export type Database = {
           remote_jid?: string
           status?: string | null
           timestamp?: string
+          transcription_status?: string | null
         }
         Relationships: [
           {
