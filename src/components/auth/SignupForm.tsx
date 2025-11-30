@@ -10,6 +10,8 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { translateAuthError } from '@/utils/authErrorMessages';
+import { supabase } from '@/integrations/supabase/client';
+import { isDomainAllowed } from '@/utils/domainValidation';
 
 const signupSchema = z.object({
   fullName: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
@@ -37,6 +39,31 @@ export function SignupForm() {
     setIsLoading(true);
     
     try {
+      // Verificar restrição de domínio antes de criar conta
+      const { data: configs } = await supabase
+        .from('project_config')
+        .select('key, value')
+        .in('key', ['restrict_signup_by_domain', 'allowed_email_domains']);
+      
+      const isRestrictionEnabled = configs?.find(c => c.key === 'restrict_signup_by_domain')?.value === 'true';
+      const allowedDomainsString = configs?.find(c => c.key === 'allowed_email_domains')?.value || '';
+      const allowedDomains = allowedDomainsString
+        .split(',')
+        .map(d => d.trim())
+        .filter(Boolean);
+      
+      // Validar domínio do email
+      if (!isDomainAllowed(data.email, allowedDomains, isRestrictionEnabled)) {
+        const domainsText = allowedDomains.map(d => `@${d}`).join(', ');
+        toast({
+          variant: 'destructive',
+          title: 'Domínio não permitido',
+          description: `Apenas emails com os seguintes domínios podem se cadastrar: ${domainsText}`,
+        });
+        setIsLoading(false);
+        return;
+      }
+      
       const { error } = await signUp(data.email, data.password, data.fullName);
       
       if (error) {
