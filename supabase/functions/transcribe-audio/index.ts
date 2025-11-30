@@ -66,8 +66,10 @@ serve(async (req) => {
       throw new Error('No media URL found for audio message');
     }
 
-    console.log(`[transcribe-audio] Downloading audio from: ${message.media_url}`);
-    const audioResponse = await fetch(message.media_url);
+    // Clean URL by removing any codec/encoding suffixes
+    const cleanMediaUrl = message.media_url.split(';')[0];
+    console.log(`[transcribe-audio] Downloading audio from: ${cleanMediaUrl}`);
+    const audioResponse = await fetch(cleanMediaUrl);
     if (!audioResponse.ok) {
       throw new Error(`Failed to download audio: ${audioResponse.statusText}`);
     }
