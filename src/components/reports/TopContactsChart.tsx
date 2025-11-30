@@ -28,7 +28,7 @@ export function TopContactsChart({ data }: TopContactsChartProps) {
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={data} layout="horizontal">
+          <BarChart data={data} layout="vertical">
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis type="number" />
             <YAxis dataKey="contactName" type="category" width={120} />
