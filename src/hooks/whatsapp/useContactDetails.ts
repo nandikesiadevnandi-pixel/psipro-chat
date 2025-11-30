@@ -88,14 +88,29 @@ export const useContactDetails = (contactId: string | null) => {
 
       if (messagesError) throw messagesError;
 
-      // Buscar histórico de sentimento
-      const { data: sentimentHistory, error: sentimentError } = await supabase
-        .from('whatsapp_sentiment_history')
-        .select('*')
-        .eq('contact_id', contactId)
-        .order('created_at', { ascending: true });
+      // Buscar análises ATUAIS de todas as conversas do contato
+      const { data: currentAnalysis, error: currentError } = await supabase
+        .from('whatsapp_sentiment_analysis')
+        .select('id, created_at, sentiment, confidence_score, summary')
+        .in('conversation_id', conversationIds);
 
-      if (sentimentError) throw sentimentError;
+      if (currentError) throw currentError;
+
+      // Buscar HISTÓRICO de análises anteriores
+      const { data: historyAnalysis, error: historyError } = await supabase
+        .from('whatsapp_sentiment_history')
+        .select('id, created_at, sentiment, confidence_score, summary')
+        .eq('contact_id', contactId);
+
+      if (historyError) throw historyError;
+
+      // Combinar ambos e ordenar por data
+      const sentimentHistory = [
+        ...(currentAnalysis || []),
+        ...(historyAnalysis || []),
+      ].sort((a, b) => 
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
 
       // Buscar resumos
       const { data: summaries, error: summariesError } = await supabase
