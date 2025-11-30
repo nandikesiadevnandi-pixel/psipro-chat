@@ -167,11 +167,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Auto-setup infrastructure for remix
+  const setupRemixInfrastructure = async () => {
+    try {
+      console.log('[AuthContext] Setting up remix infrastructure...');
+      
+      const { data, error } = await supabase.functions.invoke('setup-remix-infrastructure');
+      
+      if (error) {
+        console.error('[AuthContext] Error setting up infrastructure:', error);
+      } else {
+        console.log('[AuthContext] Infrastructure setup complete:', data);
+      }
+    } catch (error) {
+      console.error('[AuthContext] Error in setupRemixInfrastructure:', error);
+    }
+  };
+
   // Auto-setup project for admin on first login
   useEffect(() => {
     if (role === 'admin' && !isCheckingConfig && isConfigured === false) {
       console.log('[AuthContext] Admin detected, running auto-setup...');
       setupProject();
+      // Also setup infrastructure (storage buckets, realtime)
+      setupRemixInfrastructure();
     }
   }, [role, isConfigured, isCheckingConfig, setupProject]);
 

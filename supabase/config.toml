@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.ensure-user-profile]
 verify_jwt = true
+
+[functions.setup-remix-infrastructure]
+verify_jwt = true
