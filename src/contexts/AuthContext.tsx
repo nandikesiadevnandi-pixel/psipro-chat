@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useProjectSetup } from '@/hooks/useProjectSetup';
 
@@ -30,6 +29,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isSupervisor: boolean;
   isAgent: boolean;
+  shouldRedirectToSetup: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -40,9 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isFirstAdminLogin, setIsFirstAdminLogin] = useState(false);
   const { toast } = useToast();
-  const navigate = useNavigate();
   const { setupProject, isConfigured, isCheckingConfig } = useProjectSetup();
 
   // Auto-create profile and role if missing
@@ -195,23 +193,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [role, isConfigured, isCheckingConfig, setupProject]);
 
-  // Handle navigation after login based on role and config status
-  useEffect(() => {
-    // Só executar se estamos num processo de login
-    if (!isFirstAdminLogin || !role || isCheckingConfig) return;
-
-    if (role === 'admin' && isConfigured === false) {
-      console.log('[AuthContext] First admin login on unconfigured project, redirecting to setup...');
-      navigate('/whatsapp/settings?tab=setup');
-    } else {
-      // Login normal - ir para WhatsApp
-      console.log('[AuthContext] Navigating to WhatsApp conversations...');
-      navigate('/whatsapp');
-    }
-    
-    setIsFirstAdminLogin(false);
-  }, [isFirstAdminLogin, role, isConfigured, isCheckingConfig, navigate]);
-
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -223,8 +204,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Login realizado com sucesso",
         description: "Bem-vindo de volta!",
       });
-      // Marcar que houve login - redirecionamento será feito pelo useEffect
-      setIsFirstAdminLogin(true);
     }
 
     return { error };
@@ -259,8 +238,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           title: "Cadastro realizado com sucesso",
           description: "Bem-vindo ao sistema!",
         });
-        // Marcar que houve login - redirecionamento será feito pelo useEffect
-        setIsFirstAdminLogin(true);
       }
     }
 
@@ -277,7 +254,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       title: "Logout realizado",
       description: "Até logo!",
     });
-    navigate('/auth');
   };
 
   const refreshProfile = async () => {
@@ -289,6 +265,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAdmin = role === 'admin';
   const isSupervisor = role === 'supervisor';
   const isAgent = role === 'agent';
+  
+  // Determine if admin should be redirected to setup
+  const shouldRedirectToSetup = isAdmin && !isCheckingConfig && isConfigured === false;
 
   console.log('🔐 [AuthContext] Current auth state:', { 
     userId: user?.id, 
@@ -296,7 +275,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAdmin, 
     isSupervisor, 
     isAgent,
-    profileEmail: profile?.id
+    profileEmail: profile?.id,
+    shouldRedirectToSetup
   });
 
   const value: AuthContextType = {
@@ -312,6 +292,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAdmin,
     isSupervisor,
     isAgent,
+    shouldRedirectToSetup,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

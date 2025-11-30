@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   DropdownMenu,
@@ -29,6 +30,12 @@ const roleLabels = {
 export function UserMenu() {
   const { profile, role, signOut } = useAuth();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
 
   if (!profile || !role) {
     return null;
@@ -77,7 +84,7 @@ export function UserMenu() {
         
         <DropdownMenuSeparator />
         
-        <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive">
+        <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
           <LogOut className="mr-2 h-4 w-4" />
           <span>Sair</span>
         </DropdownMenuItem>
