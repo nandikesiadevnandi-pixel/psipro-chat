@@ -125,7 +125,8 @@ async function downloadAndUploadMedia(
     const blob = new Blob([bytes], { type: mimetype });
 
     // Generate unique filename
-    const extension = mimetype.split('/')[1] || 'bin';
+    // Extract extension correctly, removing codec info
+    const extension = (mimetype.split('/')[1] || 'bin').split(';')[0].trim();
     const filename = `${Date.now()}-${messageKey.id}.${extension}`;
     const filePath = `${instanceName}/${filename}`;
 

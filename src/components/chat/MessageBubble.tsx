@@ -13,6 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { EditHistoryPopover } from "./EditHistoryPopover";
 import { EditMessageModal } from "./EditMessageModal";
 import { useEditMessage } from "@/hooks/whatsapp/useEditMessage";
+import { useTranscribeAudio } from "@/hooks/whatsapp/useTranscribeAudio";
 
 type Message = Tables<'whatsapp_messages'>;
 type Reaction = Tables<'whatsapp_reactions'>;
@@ -31,6 +32,7 @@ export const MessageBubble = ({ message, reactions = [], onReply }: MessageBubbl
   const time = format(new Date(message.timestamp), 'HH:mm');
   const { sendReaction } = useMessageReaction();
   const editMessage = useEditMessage();
+  const transcribeAudio = useTranscribeAudio();
 
   // Check if message can be edited (within 15 minutes and text only)
   const canEdit = isFromMe && 
@@ -149,7 +151,29 @@ export const MessageBubble = ({ message, reactions = [], onReply }: MessageBubbl
               <p className="text-xs text-muted-foreground italic">Transcrevendo áudio...</p>
             )}
             {message.transcription_status === 'failed' && (
-              <p className="text-xs text-destructive italic">Falha na transcrição</p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-destructive italic">Falha na transcrição</p>
+                <Button 
+                  size="sm" 
+                  variant="ghost"
+                  onClick={() => transcribeAudio.mutate(message.id)}
+                  disabled={transcribeAudio.isPending}
+                  className="h-6 text-xs"
+                >
+                  Tentar novamente
+                </Button>
+              </div>
+            )}
+            {!message.audio_transcription && !message.transcription_status && (
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => transcribeAudio.mutate(message.id)}
+                disabled={transcribeAudio.isPending}
+                className="h-7 text-xs"
+              >
+                {transcribeAudio.isPending ? 'Transcrevendo...' : '🎤 Transcrever áudio'}
+              </Button>
             )}
           </div>
         );
