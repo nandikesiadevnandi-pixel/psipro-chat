@@ -104,10 +104,10 @@ export const useContactDetails = (contactId: string | null) => {
 
       if (historyError) throw historyError;
 
-      // Combinar ambos e ordenar por data
+      // Combinar ambos e ordenar por data (histórico primeiro, atual depois para prevalecer)
       const sentimentHistory = [
-        ...(currentAnalysis || []),
         ...(historyAnalysis || []),
+        ...(currentAnalysis || []),
       ].sort((a, b) => 
         new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
       );
