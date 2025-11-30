@@ -46,7 +46,7 @@ export function TopicsDistributionChart({ data }: TopicsDistributionChartProps) 
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={chartData} layout="horizontal">
+          <BarChart data={chartData} layout="vertical">
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis type="number" />
             <YAxis dataKey="name" type="category" width={120} />
