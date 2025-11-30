@@ -40,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFirstAdminLogin, setIsFirstAdminLogin] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { setupProject, isConfigured, isCheckingConfig } = useProjectSetup();
@@ -194,6 +195,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [role, isConfigured, isCheckingConfig, setupProject]);
 
+  // Handle navigation after login based on role and config status
+  useEffect(() => {
+    // Só executar se estamos num processo de login
+    if (!isFirstAdminLogin || !role || isCheckingConfig) return;
+
+    if (role === 'admin' && isConfigured === false) {
+      console.log('[AuthContext] First admin login on unconfigured project, redirecting to setup...');
+      navigate('/whatsapp/settings?tab=setup');
+    } else {
+      // Login normal - ir para WhatsApp
+      console.log('[AuthContext] Navigating to WhatsApp conversations...');
+      navigate('/whatsapp');
+    }
+    
+    setIsFirstAdminLogin(false);
+  }, [isFirstAdminLogin, role, isConfigured, isCheckingConfig, navigate]);
+
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -205,7 +223,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Login realizado com sucesso",
         description: "Bem-vindo de volta!",
       });
-      navigate('/whatsapp');
+      // Marcar que houve login - redirecionamento será feito pelo useEffect
+      setIsFirstAdminLogin(true);
     }
 
     return { error };
@@ -240,7 +259,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           title: "Cadastro realizado com sucesso",
           description: "Bem-vindo ao sistema!",
         });
-        navigate('/whatsapp');
+        // Marcar que houve login - redirecionamento será feito pelo useEffect
+        setIsFirstAdminLogin(true);
       }
     }
 
