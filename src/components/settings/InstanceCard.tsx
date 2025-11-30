@@ -14,7 +14,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useWhatsAppInstances } from "@/hooks/whatsapp";
-import { RefreshCw, Pencil, Trash2 } from "lucide-react";
+import { RefreshCw, Pencil, Trash2, Copy, Link } from "lucide-react";
 import { toast } from "sonner";
 import { EditInstanceDialog } from "./EditInstanceDialog";
 
@@ -28,6 +28,13 @@ export const InstanceCard = ({ instance }: InstanceCardProps) => {
   const { testConnection, deleteInstance } = useWhatsAppInstances();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+
+  const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/evolution-webhook`;
+
+  const copyWebhookUrl = () => {
+    navigator.clipboard.writeText(webhookUrl);
+    toast.success("URL copiada!");
+  };
 
   const handleTestConnection = async () => {
     try {
@@ -87,13 +94,33 @@ export const InstanceCard = ({ instance }: InstanceCardProps) => {
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-2">
+        <CardContent className="space-y-3">
           <div className="text-sm">
             <span className="text-muted-foreground">Status:</span>{" "}
             <span className="font-medium">{getStatusText()}</span>
           </div>
           <div className="text-sm text-muted-foreground">
             Criado em {new Date(instance.created_at).toLocaleDateString("pt-BR")}
+          </div>
+          
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <Link className="h-3.5 w-3.5" />
+              <span>Webhook:</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 bg-muted px-2 py-1.5 rounded text-xs break-all select-all font-mono">
+                {webhookUrl}
+              </code>
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                onClick={copyWebhookUrl}
+                className="h-8 w-8 p-0 shrink-0"
+              >
+                <Copy className="h-3.5 w-3.5" />
+              </Button>
+            </div>
           </div>
         </CardContent>
 
