@@ -716,6 +716,42 @@ async function processMessageUpsert(payload: EvolutionWebhookPayload, supabase: 
 
     console.log('[evolution-webhook] Message saved successfully');
 
+    // Trigger automatic audio transcription for audio messages (fire-and-forget)
+    if (messageType === 'audio' && mediaUrl) {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      
+      // Get the message ID that was just inserted
+      const { data: insertedMessage } = await supabase
+        .from('whatsapp_messages')
+        .select('id')
+        .eq('message_id', key.id)
+        .eq('conversation_id', conversationId)
+        .single();
+
+      if (insertedMessage) {
+        console.log('[evolution-webhook] Triggering auto-transcription for message:', insertedMessage.id);
+        
+        // Fire-and-forget: call transcription without awaiting
+        fetch(`${supabaseUrl}/functions/v1/transcribe-audio`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${serviceRoleKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ messageId: insertedMessage.id }),
+        })
+          .then(res => {
+            if (res.ok) {
+              console.log('[evolution-webhook] Auto-transcription triggered successfully');
+            } else {
+              console.error('[evolution-webhook] Failed to trigger auto-transcription:', res.status);
+            }
+          })
+          .catch(err => console.error('[evolution-webhook] Error triggering auto-transcription:', err));
+      }
+    }
+
     // Update conversation metadata
     const updateData: any = {
       last_message_at: timestamp,

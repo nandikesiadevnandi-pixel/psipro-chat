@@ -139,6 +139,18 @@ export const MessageBubble = ({ message, reactions = [], onReply }: MessageBubbl
                 <source src={message.media_url} type={message.media_mimetype || 'audio/ogg'} />
               </audio>
             )}
+            {message.audio_transcription && (
+              <div className="mt-2 p-2 bg-muted/30 rounded-md border-l-2 border-primary/30">
+                <p className="text-xs text-muted-foreground mb-1">Transcrição:</p>
+                <p className="text-sm">{message.audio_transcription}</p>
+              </div>
+            )}
+            {message.transcription_status === 'processing' && (
+              <p className="text-xs text-muted-foreground italic">Transcrevendo áudio...</p>
+            )}
+            {message.transcription_status === 'failed' && (
+              <p className="text-xs text-destructive italic">Falha na transcrição</p>
+            )}
           </div>
         );
       
