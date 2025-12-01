@@ -135,6 +135,7 @@ export type Database = {
           full_name: string
           id: string
           is_active: boolean
+          is_approved: boolean | null
           status: string | null
           updated_at: string | null
         }
@@ -145,6 +146,7 @@ export type Database = {
           full_name: string
           id: string
           is_active?: boolean
+          is_approved?: boolean | null
           status?: string | null
           updated_at?: string | null
         }
@@ -155,6 +157,7 @@ export type Database = {
           full_name?: string
           id?: string
           is_active?: boolean
+          is_approved?: boolean | null
           status?: string | null
           updated_at?: string | null
         }
