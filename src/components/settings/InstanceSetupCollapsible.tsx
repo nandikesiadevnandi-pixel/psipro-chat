@@ -117,9 +117,8 @@ const onboardingSteps = [
     phase: "webhook",
     phaseLabel: "Configuração do Webhook",
     title: "Copiar URL do Webhook",
-    description: "Após salvar, copie a URL do Webhook exibida na tela de sucesso.",
-    icon: Copy,
-    showWebhookInfo: true
+    description: "Copie a URL do Webhook exibida no card da instância criada (na aba 'Instâncias').",
+    icon: Copy
   },
   {
     id: 12,
@@ -178,11 +177,8 @@ export const InstanceSetupCollapsible = ({
     const saved = localStorage.getItem('whatsapp-onboarding-celebrated');
     return saved ? JSON.parse(saved) : false;
   });
-  const [copiedWebhook, setCopiedWebhook] = useState(false);
   const { toast } = useToast();
   const { instances, isLoading: isLoadingInstances } = useWhatsAppInstances();
-  
-  const webhookUrl = `${window.location.origin}/functions/v1/evolution-webhook`;
 
   // Persistir progresso no localStorage
   useEffect(() => {
@@ -243,16 +239,6 @@ export const InstanceSetupCollapsible = ({
         ? prev.filter(id => id !== stepId)
         : [...prev, stepId]
     );
-  };
-
-  const handleCopyWebhook = async () => {
-    await navigator.clipboard.writeText(webhookUrl);
-    setCopiedWebhook(true);
-    setTimeout(() => setCopiedWebhook(false), 2000);
-    toast({
-      title: "URL copiada!",
-      description: "A URL do webhook foi copiada para a área de transferência.",
-    });
   };
 
   const handleOpenAddInstance = () => {
@@ -350,28 +336,6 @@ export const InstanceSetupCollapsible = ({
                             <Zap className="mr-2 h-3 w-3" />
                             Criar Nova Instância
                           </Button>
-                        )}
-
-                        {/* Informações do Webhook */}
-                        {step.showWebhookInfo && (
-                          <div className="space-y-2">
-                            <div className="p-2 bg-muted rounded-md">
-                              <div className="text-xs font-medium mb-1 text-muted-foreground">URL do Webhook:</div>
-                              <div className="flex items-center gap-1">
-                                <code className="flex-1 text-xs bg-background p-1.5 rounded border break-all">
-                                  {webhookUrl}
-                                </code>
-                                <Button
-                                  size="icon"
-                                  variant="outline"
-                                  onClick={handleCopyWebhook}
-                                  className="h-7 w-7 shrink-0"
-                                >
-                                  {copiedWebhook ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
                         )}
 
                         {/* Informações de eventos */}
