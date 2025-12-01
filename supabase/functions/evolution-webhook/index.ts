@@ -20,11 +20,22 @@ interface EvolutionWebhookPayload {
 // Normalize phone number by removing WhatsApp suffixes
 function normalizePhoneNumber(remoteJid: string): { phone: string; isGroup: boolean } {
   const isGroup = remoteJid.includes('@g.us');
-  const phone = remoteJid
+  let phone = remoteJid
     .replace('@s.whatsapp.net', '')
     .replace('@g.us', '')
     .replace('@lid', '')
     .replace(/:\d+/, ''); // Remove device suffix if present
+
+  // Normalização para números brasileiros
+  // Adiciona nono dígito (9) se número brasileiro com 12 dígitos
+  // Formato esperado: 55 + DDD(2) + 9 + número(8) = 13 dígitos
+  if (phone.startsWith('55') && phone.length === 12) {
+    const countryCode = phone.substring(0, 2); // 55
+    const ddd = phone.substring(2, 4);          // DDD (ex: 48)
+    const number = phone.substring(4);          // 8 dígitos restantes
+    phone = `${countryCode}${ddd}9${number}`;
+    console.log(`[evolution-webhook] Brazilian phone normalized: ${phone}`);
+  }
   
   return { phone, isGroup };
 }
@@ -218,13 +229,42 @@ async function findOrCreateContact(
   instanceName?: string
 ): Promise<string | null> {
   try {
-    // First check if contact exists
+    // Gerar variantes do número para números brasileiros
+    // Isso trata casos onde contatos existentes podem ter formatos diferentes
+    const phoneVariants = [phoneNumber];
+
+    // Se 13 dígitos (com 9), também buscar versão de 12 dígitos
+    if (phoneNumber.startsWith('55') && phoneNumber.length === 13) {
+      const withoutNinth = phoneNumber.slice(0, 4) + phoneNumber.slice(5);
+      phoneVariants.push(withoutNinth);
+    }
+    // Se 12 dígitos (sem 9), também buscar versão de 13 dígitos
+    if (phoneNumber.startsWith('55') && phoneNumber.length === 12) {
+      const withNinth = phoneNumber.slice(0, 4) + '9' + phoneNumber.slice(4);
+      phoneVariants.push(withNinth);
+    }
+
+    console.log(`[evolution-webhook] Searching contacts with variants: ${phoneVariants.join(', ')}`);
+
+    // Buscar contato existente com qualquer variante
     const { data: existingContact } = await supabase
       .from('whatsapp_contacts')
-      .select('id, name')
+      .select('id, name, phone_number')
       .eq('instance_id', instanceId)
-      .eq('phone_number', phoneNumber)
+      .in('phone_number', phoneVariants)
       .maybeSingle();
+
+    // Se encontrou com formato antigo, atualizar para formato normalizado
+    if (existingContact && existingContact.phone_number !== phoneNumber) {
+      await supabase
+        .from('whatsapp_contacts')
+        .update({ 
+          phone_number: phoneNumber,
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', existingContact.id);
+      console.log(`[evolution-webhook] Contact phone normalized: ${existingContact.phone_number} -> ${phoneNumber}`);
+    }
 
     if (existingContact) {
       // Only update name if:
