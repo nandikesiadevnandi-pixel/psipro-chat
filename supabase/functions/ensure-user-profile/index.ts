@@ -42,16 +42,39 @@ Deno.serve(async (req) => {
 
     let profileCreated = false;
     let roleCreated = false;
+    let profileAutoApproved = false;
+
+    // Check if approval is required
+    const { data: approvalConfig } = await supabaseAdmin
+      .from('project_config')
+      .select('value')
+      .eq('key', 'require_account_approval')
+      .maybeSingle();
+
+    const requireApproval = approvalConfig?.value === 'true';
+    console.log('📋 Approval config:', { requireApproval });
+
+    // Count existing profiles to determine if first user
+    const { count: profileCount } = await supabaseAdmin
+      .from('profiles')
+      .select('*', { count: 'exact', head: true });
+
+    const isFirstUser = profileCount === null || profileCount === 0;
+    console.log('👤 Profile count:', profileCount, 'Is first user:', isFirstUser);
 
     // Check if profile exists
     const { data: existingProfile } = await supabaseAdmin
       .from('profiles')
-      .select('id')
+      .select('id, is_approved')
       .eq('id', user.id)
       .maybeSingle();
 
     if (!existingProfile) {
       console.log('⚠️ Profile missing, creating...');
+      
+      // First user always approved; others depend on config
+      const isApproved = isFirstUser ? true : !requireApproval;
+      console.log('📝 Creating profile with is_approved:', isApproved);
       
       // Create profile
       const { error: profileError } = await supabaseAdmin
@@ -60,14 +83,40 @@ Deno.serve(async (req) => {
           id: user.id,
           full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuário',
           email: user.email,
-          is_active: true
+          is_active: true,
+          is_approved: isApproved
         });
 
       if (profileError) {
         console.error('❌ Error creating profile:', profileError);
       } else {
         profileCreated = true;
-        console.log('✅ Profile created');
+        console.log('✅ Profile created with is_approved:', isApproved);
+      }
+    } else {
+      // Profile exists - check if first/only user needs auto-approval fix
+      // This handles cases where profile was created without is_approved
+      if (existingProfile.is_approved === false || existingProfile.is_approved === null) {
+        // Re-count to check if this is the only user
+        const { count: totalProfiles } = await supabaseAdmin
+          .from('profiles')
+          .select('*', { count: 'exact', head: true });
+
+        // If only one profile exists and it's not approved, auto-approve (first admin fix)
+        if (totalProfiles === 1) {
+          console.log('🔧 Auto-approving first/only user...');
+          const { error: approveError } = await supabaseAdmin
+            .from('profiles')
+            .update({ is_approved: true })
+            .eq('id', user.id);
+
+          if (!approveError) {
+            profileAutoApproved = true;
+            console.log('✅ First user auto-approved');
+          } else {
+            console.error('❌ Error auto-approving:', approveError);
+          }
+        }
       }
     }
 
@@ -81,13 +130,13 @@ Deno.serve(async (req) => {
     if (!existingRole) {
       console.log('⚠️ Role missing, assigning...');
       
-      // Check if this is the first user (no other profiles)
-      const { count } = await supabaseAdmin
+      // Re-count profiles after potential creation
+      const { count: currentProfileCount } = await supabaseAdmin
         .from('profiles')
         .select('*', { count: 'exact', head: true });
 
-      const assignedRole = (count === null || count <= 1) ? 'admin' : 'agent';
-      console.log(`📝 Assigning role: ${assignedRole} (total profiles: ${count})`);
+      const assignedRole = (currentProfileCount === null || currentProfileCount <= 1) ? 'admin' : 'agent';
+      console.log(`📝 Assigning role: ${assignedRole} (total profiles: ${currentProfileCount})`);
 
       const { error: roleError } = await supabaseAdmin
         .from('user_roles')
@@ -108,6 +157,7 @@ Deno.serve(async (req) => {
       success: true,
       profileCreated,
       roleCreated,
+      profileAutoApproved,
       existingProfile: !!existingProfile,
       existingRole: !!existingRole
     }), {
