@@ -27,6 +27,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  markSetupRedirectDone: () => void;
   isAdmin: boolean;
   isSupervisor: boolean;
   isAgent: boolean;
@@ -42,8 +43,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasRedirectedToSetup, setHasRedirectedToSetup] = useState(false);
   const { toast } = useToast();
   const { setupProject, isConfigured, isCheckingConfig } = useProjectSetup();
+
+  const markSetupRedirectDone = () => {
+    setHasRedirectedToSetup(true);
+  };
 
   // Auto-create profile and role if missing
   const ensureUserProfile = async (userId: string, accessToken: string) => {
@@ -291,6 +297,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
     setProfile(null);
     setRole(null);
+    setHasRedirectedToSetup(false);
     toast({
       title: "Logout realizado",
       description: "Até logo!",
@@ -308,8 +315,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAgent = role === 'agent';
   const isApproved = profile?.is_approved ?? true; // Default to true for safety
   
-  // Determine if admin should be redirected to setup
-  const shouldRedirectToSetup = isAdmin && !isCheckingConfig && isConfigured === false;
+  // Determine if admin should be redirected to setup (only once per session)
+  const shouldRedirectToSetup = isAdmin && !isCheckingConfig && isConfigured === false && !hasRedirectedToSetup;
 
   console.log('🔐 [AuthContext] Current auth state:', { 
     userId: user?.id, 
@@ -331,6 +338,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signUp,
     signOut,
     refreshProfile,
+    markSetupRedirectDone,
     isAdmin,
     isSupervisor,
     isAgent,

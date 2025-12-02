@@ -8,7 +8,7 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, isLoading, shouldRedirectToSetup, isApproved } = useAuth();
+  const { user, isLoading, shouldRedirectToSetup, isApproved, markSetupRedirectDone } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -20,13 +20,14 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     }
   }, [user, isLoading, isApproved, location.pathname, navigate]);
 
-  // Redirect admin to setup on first login
+  // Redirect admin to setup on first login (only once per session)
   useEffect(() => {
     if (!isLoading && user && shouldRedirectToSetup && location.pathname !== '/whatsapp/settings') {
       console.log('[ProtectedRoute] Redirecting admin to setup...');
+      markSetupRedirectDone();
       navigate('/whatsapp/settings?tab=setup', { replace: true });
     }
-  }, [user, isLoading, shouldRedirectToSetup, location.pathname, navigate]);
+  }, [user, isLoading, shouldRedirectToSetup, location.pathname, navigate, markSetupRedirectDone]);
 
   // Show loading state while checking auth
   if (isLoading) {
