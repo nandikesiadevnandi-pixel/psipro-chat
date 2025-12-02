@@ -34,11 +34,11 @@ export const TeamMembersList = () => {
           <TableHeader>
             <TableRow>
               <TableHead>Membro</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>Role / Status Aprovação</TableHead>
+              <TableHead>Status Presença</TableHead>
               <TableHead>Conversas Ativas</TableHead>
               <TableHead>Cadastro</TableHead>
-              <TableHead className="w-[50px]"></TableHead>
+              <TableHead className="w-[120px]">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

@@ -8,9 +8,17 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, isLoading, shouldRedirectToSetup } = useAuth();
+  const { user, isLoading, shouldRedirectToSetup, isApproved } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Redirect unapproved users to pending approval page
+  useEffect(() => {
+    if (!isLoading && user && !isApproved && location.pathname !== '/pending-approval') {
+      console.log('[ProtectedRoute] Redirecting unapproved user to pending approval...');
+      navigate('/pending-approval', { replace: true });
+    }
+  }, [user, isLoading, isApproved, location.pathname, navigate]);
 
   // Redirect admin to setup on first login
   useEffect(() => {

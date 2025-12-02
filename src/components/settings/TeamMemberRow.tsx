@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MoreVertical, ShieldCheck, UserCog, Users, Ban, CheckCircle } from "lucide-react";
+import { MoreVertical, ShieldCheck, UserCog, Users, Ban, CheckCircle, Clock } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,11 +10,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { TableCell, TableRow } from "@/components/ui/table";
-import { TeamMember } from "@/hooks/useTeamManagement";
+import { TeamMember, useTeamManagement } from "@/hooks/useTeamManagement";
 import { ChangeRoleDialog } from "./ChangeRoleDialog";
 import { DeactivateMemberDialog } from "./DeactivateMemberDialog";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { toast } from "sonner";
 
 interface TeamMemberRowProps {
   member: TeamMember;
@@ -36,6 +37,15 @@ const statusConfig = {
 export const TeamMemberRow = ({ member }: TeamMemberRowProps) => {
   const [showChangeRoleDialog, setShowChangeRoleDialog] = useState(false);
   const [showDeactivateDialog, setShowDeactivateDialog] = useState(false);
+  const { approveUser, isApprovingUser } = useTeamManagement();
+
+  const handleApprove = async () => {
+    try {
+      await approveUser(member.id);
+    } catch (error) {
+      console.error('Error approving user:', error);
+    }
+  };
 
   const roleInfo = roleConfig[member.role];
   const statusInfo = statusConfig[member.status];
@@ -67,10 +77,18 @@ export const TeamMemberRow = ({ member }: TeamMemberRowProps) => {
         </TableCell>
 
         <TableCell>
-          <Badge variant={roleInfo.variant} className="gap-1">
-            <RoleIcon className="h-3 w-3" />
-            {roleInfo.label}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant={roleInfo.variant} className="gap-1">
+              <RoleIcon className="h-3 w-3" />
+              {roleInfo.label}
+            </Badge>
+            {!member.is_approved && (
+              <Badge variant="outline" className="gap-1 text-warning border-warning">
+                <Clock className="h-3 w-3" />
+                Pendente
+              </Badge>
+            )}
+          </div>
         </TableCell>
 
         <TableCell>
@@ -91,32 +109,51 @@ export const TeamMemberRow = ({ member }: TeamMemberRowProps) => {
         </TableCell>
 
         <TableCell>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <MoreVertical className="h-4 w-4" />
+          <div className="flex items-center gap-2">
+            {!member.is_approved && (
+              <Button
+                size="sm"
+                variant="default"
+                onClick={handleApprove}
+                disabled={isApprovingUser}
+              >
+                <CheckCircle className="h-4 w-4 mr-1" />
+                Aprovar
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setShowChangeRoleDialog(true)}>
-                <UserCog className="mr-2 h-4 w-4" />
-                Alterar Role
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowDeactivateDialog(true)}>
-                {member.is_active ? (
-                  <>
-                    <Ban className="mr-2 h-4 w-4" />
-                    Desativar
-                  </>
-                ) : (
-                  <>
+            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {!member.is_approved && (
+                  <DropdownMenuItem onClick={handleApprove} disabled={isApprovingUser}>
                     <CheckCircle className="mr-2 h-4 w-4" />
-                    Ativar
-                  </>
+                    Aprovar Usuário
+                  </DropdownMenuItem>
                 )}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <DropdownMenuItem onClick={() => setShowChangeRoleDialog(true)}>
+                  <UserCog className="mr-2 h-4 w-4" />
+                  Alterar Role
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowDeactivateDialog(true)}>
+                  {member.is_active ? (
+                    <>
+                      <Ban className="mr-2 h-4 w-4" />
+                      Desativar
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Ativar
+                    </>
+                  )}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </TableCell>
       </TableRow>
 

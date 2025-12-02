@@ -12,11 +12,12 @@ export function useSecuritySettings() {
       const { data, error } = await supabase
         .from("project_config")
         .select("key, value")
-        .in("key", ["restrict_signup_by_domain", "allowed_email_domains"]);
+        .in("key", ["restrict_signup_by_domain", "allowed_email_domains", "require_account_approval"]);
 
       if (error) throw error;
 
       const restrictEnabled = data?.find((c) => c.key === "restrict_signup_by_domain")?.value === "true";
+      const requireApproval = data?.find((c) => c.key === "require_account_approval")?.value === "true";
       const domainsString = data?.find((c) => c.key === "allowed_email_domains")?.value || "";
       const domains = domainsString
         .split(",")
@@ -25,6 +26,7 @@ export function useSecuritySettings() {
 
       return {
         restrictEnabled,
+        requireApproval,
         allowedDomains: domains,
       };
     },
@@ -32,10 +34,10 @@ export function useSecuritySettings() {
 
   // Atualizar restrição ativada/desativada
   const toggleRestriction = useMutation({
-    mutationFn: async (enabled: boolean) => {
+    mutationFn: async ({ enabled, key }: { enabled: boolean; key: string }) => {
       const { error } = await supabase.from("project_config").upsert(
         {
-          key: "restrict_signup_by_domain",
+          key: key,
           value: enabled ? "true" : "false",
         },
         { onConflict: "key" }
@@ -112,7 +114,7 @@ export function useSecuritySettings() {
   });
 
   return {
-    settings: settings || { restrictEnabled: false, allowedDomains: [] },
+    settings: settings || { restrictEnabled: false, requireApproval: false, allowedDomains: [] },
     isLoading,
     toggleRestriction,
     addDomain,

@@ -12,6 +12,7 @@ export interface TeamMember {
   status: 'online' | 'offline' | 'away' | 'busy';
   role: AppRole;
   is_active: boolean;
+  is_approved: boolean;
   activeConversations: number;
   created_at: string;
 }
@@ -25,7 +26,7 @@ export const useTeamManagement = () => {
       // Get all profiles
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, full_name, email, avatar_url, status, is_active, created_at')
+        .select('id, full_name, email, avatar_url, status, is_active, is_approved, created_at')
         .order('created_at', { ascending: false });
 
       if (profilesError) throw profilesError;
@@ -66,6 +67,7 @@ export const useTeamManagement = () => {
           status: profile.status as 'online' | 'offline' | 'away' | 'busy',
           role: (roleData?.role || 'agent') as AppRole,
           is_active: profile.is_active,
+          is_approved: profile.is_approved ?? true,
           activeConversations: conversationCounts[profile.id] || 0,
           created_at: profile.created_at || new Date().toISOString(),
         };
@@ -129,14 +131,34 @@ export const useTeamManagement = () => {
     },
   });
 
+  const approveUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_approved: true })
+        .eq('id', userId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['team-members'] });
+      toast.success('Usuário aprovado com sucesso');
+    },
+    onError: (error: any) => {
+      toast.error('Erro ao aprovar usuário: ' + error.message);
+    },
+  });
+
   return {
     members: data || [],
     isLoading,
     updateRole: updateRoleMutation.mutateAsync,
     toggleActive: toggleActiveMutation.mutateAsync,
     inviteMember: inviteMemberMutation.mutateAsync,
+    approveUser: approveUserMutation.mutateAsync,
     isUpdatingRole: updateRoleMutation.isPending,
     isTogglingActive: toggleActiveMutation.isPending,
     isInviting: inviteMemberMutation.isPending,
+    isApprovingUser: approveUserMutation.isPending,
   };
 };
