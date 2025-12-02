@@ -39,13 +39,14 @@ export function SignupForm() {
     setIsLoading(true);
     
     try {
-      // Verificar restrição de domínio antes de criar conta
+      // Verificar restrição de domínio e aprovação antes de criar conta
       const { data: configs } = await supabase
         .from('project_config')
         .select('key, value')
-        .in('key', ['restrict_signup_by_domain', 'allowed_email_domains']);
+        .in('key', ['restrict_signup_by_domain', 'allowed_email_domains', 'require_account_approval']);
       
       const isRestrictionEnabled = configs?.find(c => c.key === 'restrict_signup_by_domain')?.value === 'true';
+      const requireApproval = configs?.find(c => c.key === 'require_account_approval')?.value === 'true';
       const allowedDomainsString = configs?.find(c => c.key === 'allowed_email_domains')?.value || '';
       const allowedDomains = allowedDomainsString
         .split(',')
@@ -73,7 +74,15 @@ export function SignupForm() {
           description: translateAuthError(error.message),
         });
       } else {
-        // Navigate on success - ProtectedRoute will handle redirect to setup if needed
+        // Se aprovação obrigatória, usuário será redirecionado automaticamente pelo ProtectedRoute
+        if (requireApproval) {
+          toast({
+            title: 'Conta criada com sucesso!',
+            description: 'Sua conta está aguardando aprovação de um administrador. Você receberá acesso em breve.',
+            duration: 7000,
+          });
+        }
+        // Navigate on success - ProtectedRoute will handle redirect based on approval status
         navigate('/whatsapp');
       }
     } catch (error) {

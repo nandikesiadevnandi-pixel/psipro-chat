@@ -12,6 +12,7 @@ interface Profile {
   email: string | null;
   avatar_url: string | null;
   status: 'online' | 'offline' | 'away' | 'busy';
+  is_approved: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -29,6 +30,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isSupervisor: boolean;
   isAgent: boolean;
+  isApproved: boolean;
   shouldRedirectToSetup: boolean;
 }
 
@@ -304,6 +306,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAdmin = role === 'admin';
   const isSupervisor = role === 'supervisor';
   const isAgent = role === 'agent';
+  const isApproved = profile?.is_approved ?? true; // Default to true for safety
   
   // Determine if admin should be redirected to setup
   const shouldRedirectToSetup = isAdmin && !isCheckingConfig && isConfigured === false;
@@ -331,6 +334,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAdmin,
     isSupervisor,
     isAgent,
+    isApproved,
     shouldRedirectToSetup,
   };
 
