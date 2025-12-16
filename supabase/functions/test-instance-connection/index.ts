@@ -121,12 +121,24 @@ serve(async (req) => {
       });
     }
 
-    const data = await response.json();
-    console.log('[test-instance-connection] Connection test successful');
+    // Handle empty response body (Evolution Cloud returns empty body on success)
+    const responseText = await response.text();
+    let data: any = {};
+    
+    if (responseText) {
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        console.log('[test-instance-connection] Response is not JSON:', responseText);
+      }
+    }
+    
+    console.log('[test-instance-connection] Connection test successful, data:', JSON.stringify(data));
 
     // Map Evolution API state to our status
+    // Empty response with 200 status means connected for Evolution Cloud
     let newStatus = 'disconnected';
-    if (data.state === 'open' || data.instance?.state === 'open') {
+    if (!responseText || data.state === 'open' || data.instance?.state === 'open') {
       newStatus = 'connected';
     } else if (data.state === 'connecting') {
       newStatus = 'connecting';
