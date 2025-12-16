@@ -78,14 +78,17 @@ serve(async (req) => {
     }
 
     if (!response.ok) {
+      // IMPORTANT: return HTTP 200 so supabase-js doesn't treat it as an Edge Function failure.
+      // We still surface the real upstream status in the JSON payload.
       console.error('❌ Evolution API error:', responseData);
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
+          success: false,
           error: responseData?.message || responseText || 'Connection test failed',
           status: response.status,
-          details: responseData
+          details: responseData,
         }),
-        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
