@@ -11,12 +11,14 @@ type InstanceInsertWithSecrets = InstanceInsert & {
   api_url: string;
   api_key: string;
   provider_type?: string;
+  instance_id_external?: string;
 };
 
 type InstanceUpdateWithSecrets = InstanceUpdate & {
   api_url?: string;
   api_key?: string;
   provider_type?: string;
+  instance_id_external?: string;
 };
 
 export const useWhatsAppInstances = () => {
@@ -37,14 +39,15 @@ export const useWhatsAppInstances = () => {
 
   const createInstance = useMutation({
     mutationFn: async (instance: InstanceInsertWithSecrets) => {
-      const { api_url, api_key, provider_type, ...instanceData } = instance;
+      const { api_url, api_key, provider_type, instance_id_external, ...instanceData } = instance;
 
-      // 1. Create instance in main table with provider_type
+      // 1. Create instance in main table with provider_type and instance_id_external
       const { data: instanceResult, error: instanceError } = await supabase
         .from('whatsapp_instances')
         .insert({
           ...instanceData,
           provider_type: provider_type || 'self_hosted',
+          instance_id_external: instance_id_external || null,
         } as any)
         .select()
         .single();
@@ -78,12 +81,13 @@ export const useWhatsAppInstances = () => {
 
   const updateInstance = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: InstanceUpdateWithSecrets }) => {
-      const { api_url, api_key, provider_type, ...instanceUpdates } = updates;
+      const { api_url, api_key, provider_type, instance_id_external, ...instanceUpdates } = updates;
 
-      // Build instance updates including provider_type if provided
+      // Build instance updates including provider_type and instance_id_external if provided
       const finalInstanceUpdates = {
         ...instanceUpdates,
         ...(provider_type && { provider_type }),
+        ...(instance_id_external !== undefined && { instance_id_external }),
       };
 
       // 1. Update instance in main table

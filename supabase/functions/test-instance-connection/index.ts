@@ -79,10 +79,10 @@ serve(async (req) => {
       });
     }
 
-    // Fetch instance name and provider_type
+    // Fetch instance name, provider_type, and instance_id_external
     const { data: instance, error: instanceError } = await supabaseAdmin
       .from('whatsapp_instances')
-      .select('instance_name, provider_type')
+      .select('instance_name, provider_type, instance_id_external')
       .eq('id', instanceId)
       .single();
 
@@ -95,14 +95,20 @@ serve(async (req) => {
     }
 
     const providerType = (instance as any).provider_type || 'self_hosted';
-    console.log('[test-instance-connection] Provider type:', providerType);
+    const instanceIdExternal = (instance as any).instance_id_external;
+    console.log('[test-instance-connection] Provider type:', providerType, 'Instance ID External:', instanceIdExternal);
+
+    // For Cloud, use instance_id_external (UUID) instead of instance_name
+    const instanceIdentifier = providerType === 'cloud' && instanceIdExternal
+      ? instanceIdExternal
+      : instance.instance_name;
 
     // Test connection with Evolution API using correct auth headers
-    console.log('[test-instance-connection] Testing connection to Evolution API');
+    console.log('[test-instance-connection] Testing connection to Evolution API with identifier:', instanceIdentifier);
     const authHeaders = getEvolutionAuthHeaders(secrets.api_key, providerType);
     
     const response = await fetch(
-      `${secrets.api_url}/instance/connectionState/${instance.instance_name}`,
+      `${secrets.api_url}/instance/connectionState/${instanceIdentifier}`,
       { headers: authHeaders }
     );
 

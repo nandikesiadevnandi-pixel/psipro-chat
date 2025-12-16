@@ -25,10 +25,10 @@ serve(async (req) => {
 
     console.log('[check-instances-status] Starting periodic status check');
 
-    // Fetch all instances including provider_type
+    // Fetch all instances including provider_type and instance_id_external
     const { data: instances, error: instancesError } = await supabaseAdmin
       .from('whatsapp_instances')
-      .select('id, instance_name, provider_type');
+      .select('id, instance_name, provider_type, instance_id_external');
 
     if (instancesError) {
       console.error('[check-instances-status] Failed to fetch instances:', instancesError);
@@ -60,11 +60,17 @@ serve(async (req) => {
         }
 
         const providerType = (instance as any).provider_type || 'self_hosted';
+        const instanceIdExternal = (instance as any).instance_id_external;
         const authHeaders = getEvolutionAuthHeaders(secrets.api_key, providerType);
+
+        // For Cloud, use instance_id_external (UUID) instead of instance_name
+        const instanceIdentifier = providerType === 'cloud' && instanceIdExternal
+          ? instanceIdExternal
+          : instance.instance_name;
 
         // Check connection state via Evolution API
         const response = await fetch(
-          `${secrets.api_url}/instance/connectionState/${instance.instance_name}`,
+          `${secrets.api_url}/instance/connectionState/${instanceIdentifier}`,
           { headers: authHeaders }
         );
 
