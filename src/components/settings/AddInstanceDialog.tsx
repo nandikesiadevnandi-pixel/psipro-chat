@@ -38,6 +38,7 @@ const formSchema = z.object({
     .string()
     .min(1, "Nome da instância obrigatório")
     .regex(/^[a-zA-Z0-9_-]+$/, "Apenas letras, números, _ e -"),
+  instance_id_external: z.string().optional(),
   api_url: z.string().url("URL inválida"),
   api_key: z.string().min(1, "Token/API Key obrigatório"),
   provider_type: z.enum(["self_hosted", "cloud"]),
@@ -62,6 +63,7 @@ export const AddInstanceDialog = ({ open, onOpenChange }: AddInstanceDialogProps
     defaultValues: {
       name: "",
       instance_name: "",
+      instance_id_external: "",
       api_url: "",
       api_key: "",
       provider_type: "self_hosted",
@@ -74,11 +76,19 @@ export const AddInstanceDialog = ({ open, onOpenChange }: AddInstanceDialogProps
     const values = form.getValues();
     
     // Validate required fields for testing
-    const fieldsToValidate = ["api_url", "api_key", "instance_name"] as const;
+    const fieldsToValidate = values.provider_type === 'cloud'
+      ? ["api_url", "api_key", "instance_name", "instance_id_external"] as const
+      : ["api_url", "api_key", "instance_name"] as const;
     const isValid = await form.trigger(fieldsToValidate);
     
     if (!isValid) {
       toast.error("Preencha os campos obrigatórios para testar a conexão");
+      return;
+    }
+
+    // For Cloud, instance_id_external is required
+    if (values.provider_type === 'cloud' && !values.instance_id_external) {
+      toast.error("ID da Instância é obrigatório para Evolution Cloud");
       return;
     }
 
@@ -89,8 +99,13 @@ export const AddInstanceDialog = ({ open, onOpenChange }: AddInstanceDialogProps
         ? { Authorization: `Bearer ${values.api_key}` }
         : { apikey: values.api_key };
 
+      // For Cloud, use instance_id_external (UUID) instead of instance_name
+      const instanceIdentifier = values.provider_type === 'cloud' 
+        ? values.instance_id_external 
+        : values.instance_name;
+
       const response = await fetch(
-        `${values.api_url}/instance/connectionState/${values.instance_name}`,
+        `${values.api_url}/instance/connectionState/${instanceIdentifier}`,
         { headers }
       );
 
@@ -116,6 +131,7 @@ export const AddInstanceDialog = ({ open, onOpenChange }: AddInstanceDialogProps
       const result = await createInstance.mutateAsync({
         name: values.name,
         instance_name: values.instance_name,
+        instance_id_external: values.provider_type === 'cloud' ? values.instance_id_external : undefined,
         api_url: values.api_url,
         api_key: values.api_key,
         provider_type: values.provider_type,
@@ -239,6 +255,32 @@ export const AddInstanceDialog = ({ open, onOpenChange }: AddInstanceDialogProps
                     </FormItem>
                   )}
                 />
+
+                {providerType === 'cloud' && (
+                  <FormField
+                    control={form.control}
+                    name="instance_id_external"
+                    render={({ field }) => (
+                      <FormItem>
+                        <div className="flex items-center gap-1.5">
+                          <FormLabel>ID da Instância (UUID)</FormLabel>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent side="right" className="max-w-[250px]">
+                              <p>ID único da instância no Evolution Cloud (UUID). Encontre em "Definições → Referência de API" no painel da instância.</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                        <FormControl>
+                          <Input placeholder="ead6f2f2-7633-4e41-a08d-7272300a6ba1" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 <FormField
                   control={form.control}

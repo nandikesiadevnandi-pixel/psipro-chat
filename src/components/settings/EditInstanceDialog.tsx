@@ -37,13 +37,14 @@ const formSchema = z.object({
     .string()
     .min(1, "Nome da instância obrigatório")
     .regex(/^[a-zA-Z0-9_-]+$/, "Apenas letras, números, _ e -"),
+  instance_id_external: z.string().optional(),
   api_url: z.string().url("URL inválida"),
   api_key: z.string().min(1, "Token/API Key obrigatório"),
   provider_type: z.enum(["self_hosted", "cloud"]),
 });
 
 type FormValues = z.infer<typeof formSchema>;
-type Instance = Tables<"whatsapp_instances"> & { provider_type?: string };
+type Instance = Tables<"whatsapp_instances"> & { provider_type?: string; instance_id_external?: string | null };
 
 interface EditInstanceDialogProps {
   instance: Instance;
@@ -63,6 +64,7 @@ export const EditInstanceDialog = ({
     defaultValues: {
       name: instance.name,
       instance_name: instance.instance_name,
+      instance_id_external: instance.instance_id_external || '',
       api_url: '',
       api_key: '',
       provider_type: (instance.provider_type as "self_hosted" | "cloud") || 'self_hosted',
@@ -76,6 +78,7 @@ export const EditInstanceDialog = ({
     form.reset({
       name: instance.name,
       instance_name: instance.instance_name,
+      instance_id_external: instance.instance_id_external || '',
       api_url: '',
       api_key: '',
       provider_type: (instance.provider_type as "self_hosted" | "cloud") || 'self_hosted',
@@ -86,7 +89,10 @@ export const EditInstanceDialog = ({
     try {
       await updateInstance.mutateAsync({
         id: instance.id,
-        updates: values,
+        updates: {
+          ...values,
+          instance_id_external: values.provider_type === 'cloud' ? values.instance_id_external : null,
+        },
       });
       toast.success("Instância atualizada com sucesso!");
       onOpenChange(false);
@@ -156,6 +162,22 @@ export const EditInstanceDialog = ({
                 </FormItem>
               )}
             />
+
+            {providerType === 'cloud' && (
+              <FormField
+                control={form.control}
+                name="instance_id_external"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ID da Instância (UUID)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="ead6f2f2-7633-4e41-a08d-7272300a6ba1" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <FormField
               control={form.control}
