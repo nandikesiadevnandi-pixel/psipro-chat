@@ -623,14 +623,24 @@ async function processMessageUpsert(payload: EvolutionWebhookPayload, supabase: 
 
     console.log('[evolution-webhook] Processing message:', key.id);
 
-    // Get instance data
-    const { data: instanceData, error: instanceError } = await supabase
+    // Get instance data - try by instance_name first (self-hosted), then by instance_id_external (Cloud)
+    let { data: instanceData } = await supabase
       .from('whatsapp_instances')
-      .select('id, instance_name, status')
+      .select('id, instance_name, instance_id_external, status')
       .eq('instance_name', instance)
       .maybeSingle();
 
-    if (instanceError || !instanceData) {
+    // If not found by name, try by instance_id_external (Evolution Cloud sends UUID)
+    if (!instanceData) {
+      const { data: cloudInstance } = await supabase
+        .from('whatsapp_instances')
+        .select('id, instance_name, instance_id_external, status')
+        .eq('instance_id_external', instance)
+        .maybeSingle();
+      instanceData = cloudInstance;
+    }
+
+    if (!instanceData) {
       console.error('[evolution-webhook] Instance not found:', instance);
       return;
     }
