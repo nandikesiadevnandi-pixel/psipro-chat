@@ -17,6 +17,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -32,7 +39,8 @@ const formSchema = z.object({
     .min(1, "Nome da instância obrigatório")
     .regex(/^[a-zA-Z0-9_-]+$/, "Apenas letras, números, _ e -"),
   api_url: z.string().url("URL inválida"),
-  api_key: z.string().min(1, "API Key obrigatória"),
+  api_key: z.string().min(1, "Token/API Key obrigatório"),
+  provider_type: z.enum(["self_hosted", "cloud"]),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -56,8 +64,11 @@ export const AddInstanceDialog = ({ open, onOpenChange }: AddInstanceDialogProps
       instance_name: "",
       api_url: "",
       api_key: "",
+      provider_type: "self_hosted",
     },
   });
+
+  const providerType = form.watch("provider_type");
 
   const handleTestConnection = async () => {
     const values = form.getValues();
@@ -73,22 +84,26 @@ export const AddInstanceDialog = ({ open, onOpenChange }: AddInstanceDialogProps
 
     setIsTestingConnection(true);
     try {
-      // Create temporary instance for testing
+      // Use correct authentication header based on provider type
+      const headers: Record<string, string> = values.provider_type === 'cloud'
+        ? { Authorization: `Bearer ${values.api_key}` }
+        : { apikey: values.api_key };
+
       const response = await fetch(
         `${values.api_url}/instance/connectionState/${values.instance_name}`,
-        {
-          headers: {
-            apikey: values.api_key,
-          },
-        }
+        { headers }
       );
 
-      if (!response.ok) throw new Error("Connection test failed");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Connection test failed");
+      }
       
       setConnectionTested(true);
       toast.success("Conexão testada com sucesso!");
     } catch (error) {
-      toast.error("Falha ao testar conexão. Verifique as credenciais.");
+      const errorMessage = error instanceof Error ? error.message : "Falha ao testar conexão";
+      toast.error(`Falha ao testar conexão: ${errorMessage}`);
       setConnectionTested(false);
     } finally {
       setIsTestingConnection(false);
@@ -97,12 +112,13 @@ export const AddInstanceDialog = ({ open, onOpenChange }: AddInstanceDialogProps
 
   const onSubmit = async (values: FormValues) => {
     try {
-      // Create instance with secrets
+      // Create instance with secrets and provider_type
       const result = await createInstance.mutateAsync({
         name: values.name,
         instance_name: values.instance_name,
         api_url: values.api_url,
         api_key: values.api_key,
+        provider_type: values.provider_type,
       });
       setCreatedInstanceId(result.id);
       setShowWebhookInstructions(true);
@@ -144,6 +160,38 @@ export const AddInstanceDialog = ({ open, onOpenChange }: AddInstanceDialogProps
 
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="provider_type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center gap-1.5">
+                        <FormLabel>Tipo de Provedor</FormLabel>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent side="right" className="max-w-[250px]">
+                            <p>Selecione <strong>Self-Hosted</strong> se você instalou o Evolution API em seu próprio servidor. Selecione <strong>Cloud</strong> se usa Evolution Cloud (evoapicloud.com ou similar).</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o tipo" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="self_hosted">Evolution API Self-Hosted</SelectItem>
+                          <SelectItem value="cloud">Evolution API Cloud</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name="name"
@@ -204,12 +252,22 @@ export const AddInstanceDialog = ({ open, onOpenChange }: AddInstanceDialogProps
                             <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent side="right" className="max-w-[250px]">
-                            <p>URL de acesso ao seu Evolution API. É a mesma URL que você usa no navegador para acessar o painel.</p>
+                            <p>
+                              {providerType === 'cloud' 
+                                ? 'URL do Evolution Cloud (ex: https://api.evoapicloud.com)'
+                                : 'URL de acesso ao seu Evolution API. É a mesma URL que você usa no navegador para acessar o painel.'}
+                            </p>
                           </TooltipContent>
                         </Tooltip>
                       </div>
                       <FormControl>
-                        <Input placeholder="https://api.evolution.com" {...field} />
+                        <Input 
+                          placeholder={providerType === 'cloud' 
+                            ? "https://api.evoapicloud.com" 
+                            : "https://api.evolution.com"
+                          } 
+                          {...field} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -222,13 +280,19 @@ export const AddInstanceDialog = ({ open, onOpenChange }: AddInstanceDialogProps
                   render={({ field }) => (
                     <FormItem>
                       <div className="flex items-center gap-1.5">
-                        <FormLabel>API Key</FormLabel>
+                        <FormLabel>
+                          {providerType === 'cloud' ? 'Token da Instância' : 'API Key'}
+                        </FormLabel>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent side="right" className="max-w-[250px]">
-                            <p>Chave de autenticação da API. Se usa Cloudfy, encontre em 'Infraestrutura' no painel da ferramenta.</p>
+                            <p>
+                              {providerType === 'cloud'
+                                ? 'Token de autenticação da instância. No Evolution Cloud, encontre nas configurações da instância ou ao criá-la.'
+                                : 'Chave de autenticação da API. Se usa Cloudfy, encontre em "Infraestrutura" no painel da ferramenta.'}
+                            </p>
                           </TooltipContent>
                         </Tooltip>
                       </div>

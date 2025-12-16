@@ -2,19 +2,21 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
-type Instance = Tables<'whatsapp_instances'>;
+type Instance = Tables<'whatsapp_instances'> & { provider_type?: string };
 type InstanceInsert = TablesInsert<'whatsapp_instances'>;
 type InstanceUpdate = TablesUpdate<'whatsapp_instances'>;
 
-// Extended types that include secrets
+// Extended types that include secrets and provider_type
 type InstanceInsertWithSecrets = InstanceInsert & {
   api_url: string;
   api_key: string;
+  provider_type?: string;
 };
 
 type InstanceUpdateWithSecrets = InstanceUpdate & {
   api_url?: string;
   api_key?: string;
+  provider_type?: string;
 };
 
 export const useWhatsAppInstances = () => {
@@ -35,12 +37,15 @@ export const useWhatsAppInstances = () => {
 
   const createInstance = useMutation({
     mutationFn: async (instance: InstanceInsertWithSecrets) => {
-      const { api_url, api_key, ...instanceData } = instance;
+      const { api_url, api_key, provider_type, ...instanceData } = instance;
 
-      // 1. Create instance in main table
+      // 1. Create instance in main table with provider_type
       const { data: instanceResult, error: instanceError } = await supabase
         .from('whatsapp_instances')
-        .insert(instanceData)
+        .insert({
+          ...instanceData,
+          provider_type: provider_type || 'self_hosted',
+        } as any)
         .select()
         .single();
 
@@ -73,12 +78,18 @@ export const useWhatsAppInstances = () => {
 
   const updateInstance = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: InstanceUpdateWithSecrets }) => {
-      const { api_url, api_key, ...instanceUpdates } = updates;
+      const { api_url, api_key, provider_type, ...instanceUpdates } = updates;
+
+      // Build instance updates including provider_type if provided
+      const finalInstanceUpdates = {
+        ...instanceUpdates,
+        ...(provider_type && { provider_type }),
+      };
 
       // 1. Update instance in main table
       const { data, error: instanceError } = await supabase
         .from('whatsapp_instances')
-        .update(instanceUpdates)
+        .update(finalInstanceUpdates as any)
         .eq('id', id)
         .select()
         .single();

@@ -11,6 +11,13 @@ interface EditMessageRequest {
   newContent: string;
 }
 
+// Helper function to get Evolution API auth headers based on provider type
+function getEvolutionAuthHeaders(apiKey: string, providerType: string): Record<string, string> {
+  return providerType === 'cloud'
+    ? { Authorization: `Bearer ${apiKey}` }
+    : { apikey: apiKey };
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -37,13 +44,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get conversation and instance details
+    // Get conversation and instance details including provider_type
     const { data: conversation, error: convError } = await supabase
       .from('whatsapp_conversations')
       .select(`
         *,
         whatsapp_contacts!inner (phone_number),
-        whatsapp_instances!inner (id, instance_name)
+        whatsapp_instances!inner (id, instance_name, provider_type)
       `)
       .eq('id', body.conversationId)
       .single();
@@ -130,12 +137,16 @@ Deno.serve(async (req) => {
 
     console.log('[edit-whatsapp-message] Evolution API endpoint:', endpoint);
 
+    // Get correct auth headers based on provider type
+    const providerType = (conversation as any).whatsapp_instances.provider_type || 'self_hosted';
+    const authHeaders = getEvolutionAuthHeaders(secrets.api_key, providerType);
+
     // Call Evolution API to edit message
     const evolutionResponse = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'apikey': secrets.api_key,
+        ...authHeaders,
       },
       body: JSON.stringify(requestBody),
     });

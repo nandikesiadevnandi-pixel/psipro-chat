@@ -5,6 +5,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Helper function to get Evolution API auth headers based on provider type
+function getEvolutionAuthHeaders(apiKey: string, providerType: string): Record<string, string> {
+  return providerType === 'cloud'
+    ? { Authorization: `Bearer ${apiKey}` }
+    : { apikey: apiKey };
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -62,10 +69,10 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Get instance name
+        // Get instance name and provider_type
         const { data: instance, error: instanceError } = await supabase
           .from('whatsapp_instances')
-          .select('instance_name')
+          .select('instance_name, provider_type')
           .eq('id', contact.instance_id)
           .maybeSingle();
 
@@ -75,6 +82,9 @@ Deno.serve(async (req) => {
           continue;
         }
 
+        const providerType = (instance as any).provider_type || 'self_hosted';
+        const authHeaders = getEvolutionAuthHeaders(secrets.api_key, providerType);
+
         // Fetch profile from Evolution API
         const response = await fetch(
           `${secrets.api_url}/chat/fetchProfile/${instance.instance_name}`,
@@ -82,7 +92,7 @@ Deno.serve(async (req) => {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'apikey': secrets.api_key,
+              ...authHeaders,
             },
             body: JSON.stringify({ number: contact.phone_number }),
           }

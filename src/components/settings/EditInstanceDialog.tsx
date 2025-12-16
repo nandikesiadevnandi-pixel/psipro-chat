@@ -17,6 +17,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useWhatsAppInstances } from "@/hooks/whatsapp";
@@ -31,11 +38,12 @@ const formSchema = z.object({
     .min(1, "Nome da instância obrigatório")
     .regex(/^[a-zA-Z0-9_-]+$/, "Apenas letras, números, _ e -"),
   api_url: z.string().url("URL inválida"),
-  api_key: z.string().min(1, "API Key obrigatória"),
+  api_key: z.string().min(1, "Token/API Key obrigatório"),
+  provider_type: z.enum(["self_hosted", "cloud"]),
 });
 
 type FormValues = z.infer<typeof formSchema>;
-type Instance = Tables<"whatsapp_instances">;
+type Instance = Tables<"whatsapp_instances"> & { provider_type?: string };
 
 interface EditInstanceDialogProps {
   instance: Instance;
@@ -57,8 +65,11 @@ export const EditInstanceDialog = ({
       instance_name: instance.instance_name,
       api_url: '',
       api_key: '',
+      provider_type: (instance.provider_type as "self_hosted" | "cloud") || 'self_hosted',
     },
   });
+
+  const providerType = form.watch("provider_type");
 
   // Update form when instance changes
   useEffect(() => {
@@ -67,6 +78,7 @@ export const EditInstanceDialog = ({
       instance_name: instance.instance_name,
       api_url: '',
       api_key: '',
+      provider_type: (instance.provider_type as "self_hosted" | "cloud") || 'self_hosted',
     });
   }, [instance, form]);
 
@@ -95,6 +107,28 @@ export const EditInstanceDialog = ({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="provider_type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipo de Provedor</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="self_hosted">Evolution API Self-Hosted</SelectItem>
+                      <SelectItem value="cloud">Evolution API Cloud</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="name"
@@ -130,7 +164,13 @@ export const EditInstanceDialog = ({
                 <FormItem>
                   <FormLabel>URL da API</FormLabel>
                   <FormControl>
-                    <Input placeholder="https://api.evolution.com" {...field} />
+                    <Input 
+                      placeholder={providerType === 'cloud' 
+                        ? "https://api.evoapicloud.com" 
+                        : "https://api.evolution.com"
+                      } 
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -142,7 +182,9 @@ export const EditInstanceDialog = ({
               name="api_key"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>API Key</FormLabel>
+                  <FormLabel>
+                    {providerType === 'cloud' ? 'Token da Instância' : 'API Key'}
+                  </FormLabel>
                   <FormControl>
                     <Input type="password" placeholder="••••••••" {...field} />
                   </FormControl>
