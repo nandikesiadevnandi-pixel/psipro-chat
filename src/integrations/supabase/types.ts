@@ -443,6 +443,7 @@ export type Database = {
           instance_name: string
           metadata: Json | null
           name: string
+          provider_type: string
           qr_code: string | null
           status: string | null
           updated_at: string
@@ -453,6 +454,7 @@ export type Database = {
           instance_name: string
           metadata?: Json | null
           name: string
+          provider_type?: string
           qr_code?: string | null
           status?: string | null
           updated_at?: string
@@ -463,6 +465,7 @@ export type Database = {
           instance_name?: string
           metadata?: Json | null
           name?: string
+          provider_type?: string
           qr_code?: string | null
           status?: string | null
           updated_at?: string

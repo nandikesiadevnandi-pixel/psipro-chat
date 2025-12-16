@@ -6,6 +6,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Helper function to get Evolution API auth headers based on provider type
+function getEvolutionAuthHeaders(apiKey: string, providerType: string): Record<string, string> {
+  return providerType === 'cloud'
+    ? { Authorization: `Bearer ${apiKey}` }
+    : { apikey: apiKey };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -18,10 +25,10 @@ serve(async (req) => {
 
     console.log('[check-instances-status] Starting periodic status check');
 
-    // Fetch all instances
+    // Fetch all instances including provider_type
     const { data: instances, error: instancesError } = await supabaseAdmin
       .from('whatsapp_instances')
-      .select('id, instance_name');
+      .select('id, instance_name, provider_type');
 
     if (instancesError) {
       console.error('[check-instances-status] Failed to fetch instances:', instancesError);
@@ -52,14 +59,13 @@ serve(async (req) => {
           continue;
         }
 
+        const providerType = (instance as any).provider_type || 'self_hosted';
+        const authHeaders = getEvolutionAuthHeaders(secrets.api_key, providerType);
+
         // Check connection state via Evolution API
         const response = await fetch(
           `${secrets.api_url}/instance/connectionState/${instance.instance_name}`,
-          {
-            headers: {
-              'apikey': secrets.api_key,
-            },
-          }
+          { headers: authHeaders }
         );
 
         if (!response.ok) {

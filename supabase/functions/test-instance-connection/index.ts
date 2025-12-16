@@ -6,6 +6,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Helper function to get Evolution API auth headers based on provider type
+function getEvolutionAuthHeaders(apiKey: string, providerType: string): Record<string, string> {
+  return providerType === 'cloud'
+    ? { Authorization: `Bearer ${apiKey}` }
+    : { apikey: apiKey };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -72,10 +79,10 @@ serve(async (req) => {
       });
     }
 
-    // Fetch instance name
+    // Fetch instance name and provider_type
     const { data: instance, error: instanceError } = await supabaseAdmin
       .from('whatsapp_instances')
-      .select('instance_name')
+      .select('instance_name, provider_type')
       .eq('id', instanceId)
       .single();
 
@@ -87,20 +94,23 @@ serve(async (req) => {
       });
     }
 
-    // Test connection with Evolution API
+    const providerType = (instance as any).provider_type || 'self_hosted';
+    console.log('[test-instance-connection] Provider type:', providerType);
+
+    // Test connection with Evolution API using correct auth headers
     console.log('[test-instance-connection] Testing connection to Evolution API');
+    const authHeaders = getEvolutionAuthHeaders(secrets.api_key, providerType);
+    
     const response = await fetch(
       `${secrets.api_url}/instance/connectionState/${instance.instance_name}`,
-      {
-        headers: {
-          'apikey': secrets.api_key,
-        },
-      }
+      { headers: authHeaders }
     );
 
     if (!response.ok) {
       console.error('[test-instance-connection] Evolution API returned error:', response.status);
-      return new Response(JSON.stringify({ error: 'Connection test failed' }), {
+      const errorText = await response.text();
+      console.error('[test-instance-connection] Error details:', errorText);
+      return new Response(JSON.stringify({ error: 'Connection test failed', details: errorText }), {
         status: response.status,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });

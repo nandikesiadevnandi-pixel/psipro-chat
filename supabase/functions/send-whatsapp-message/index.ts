@@ -16,6 +16,13 @@ interface SendMessageRequest {
   quotedMessageId?: string;
 }
 
+// Helper function to get Evolution API auth headers based on provider type
+function getEvolutionAuthHeaders(apiKey: string, providerType: string): Record<string, string> {
+  return providerType === 'cloud'
+    ? { Authorization: `Bearer ${apiKey}` }
+    : { apikey: apiKey };
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -56,7 +63,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get conversation details including instance info
+    // Get conversation details including instance info and provider_type
     const { data: conversation, error: convError } = await supabase
       .from('whatsapp_conversations')
       .select(`
@@ -67,7 +74,8 @@ Deno.serve(async (req) => {
         ),
         whatsapp_instances!inner (
           id,
-          instance_name
+          instance_name,
+          provider_type
         )
       `)
       .eq('id', body.conversationId)
@@ -97,9 +105,10 @@ Deno.serve(async (req) => {
     }
 
     const instanceName = (conversation as any).whatsapp_instances.instance_name;
+    const providerType = (conversation as any).whatsapp_instances.provider_type || 'self_hosted';
     const contact = (conversation as any).whatsapp_contacts;
 
-    console.log('[send-whatsapp-message] Sending to:', contact.phone_number);
+    console.log('[send-whatsapp-message] Sending to:', contact.phone_number, 'Provider:', providerType);
 
     // Determine destination number format
     const destinationNumber = getDestinationNumber(contact.phone_number);
@@ -114,12 +123,15 @@ Deno.serve(async (req) => {
 
     console.log('[send-whatsapp-message] Evolution API endpoint:', endpoint);
 
+    // Get correct auth headers based on provider type
+    const authHeaders = getEvolutionAuthHeaders(secrets.api_key, providerType);
+
     // Send to Evolution API
     const evolutionResponse = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'apikey': secrets.api_key,
+        ...authHeaders,
       },
       body: JSON.stringify(requestBody),
     });
