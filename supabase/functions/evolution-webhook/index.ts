@@ -96,19 +96,27 @@ async function downloadAndUploadMedia(
   instanceName: string,
   messageKey: any,
   supabase: any,
-  mimetype: string
+  mimetype: string,
+  providerType: string = 'self_hosted'
 ): Promise<string | null> {
   try {
     console.log('[evolution-webhook] Downloading media from Evolution API...');
+    
+    // Determine correct auth header based on provider type
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (providerType === 'cloud') {
+      headers['Authorization'] = `Bearer ${apiKey}`;
+    } else {
+      headers['apikey'] = apiKey;
+    }
     
     const response = await fetch(
       `${apiUrl}/chat/getBase64FromMediaMessage/${instanceName}`,
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': apiKey,
-        },
+        headers,
         body: JSON.stringify({ message: { key: messageKey } }),
       }
     );
@@ -176,17 +184,25 @@ async function fetchAndUpdateProfilePicture(
   apiKey: string,
   instanceName: string,
   phoneNumber: string,
-  contactId: string
+  contactId: string,
+  providerType: string = 'self_hosted'
 ): Promise<void> {
   try {
+    // Determine correct auth header based on provider type
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (providerType === 'cloud') {
+      headers['Authorization'] = `Bearer ${apiKey}`;
+    } else {
+      headers['apikey'] = apiKey;
+    }
+    
     const response = await fetch(
       `${apiUrl}/chat/fetchProfile/${instanceName}`,
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': apiKey,
-        },
+        headers,
         body: JSON.stringify({ number: phoneNumber }),
       }
     );
@@ -226,7 +242,8 @@ async function findOrCreateContact(
   isFromMe: boolean,
   apiUrl?: string,
   apiKey?: string,
-  instanceName?: string
+  instanceName?: string,
+  providerType: string = 'self_hosted'
 ): Promise<string | null> {
   try {
     // Gerar variantes do número para números brasileiros
@@ -314,7 +331,7 @@ async function findOrCreateContact(
     
     // Buscar foto de perfil em background (fire-and-forget)
     if (apiUrl && apiKey && instanceName) {
-      fetchAndUpdateProfilePicture(supabase, apiUrl, apiKey, instanceName, phoneNumber, newContact.id)
+      fetchAndUpdateProfilePicture(supabase, apiUrl, apiKey, instanceName, phoneNumber, newContact.id, providerType)
         .catch(err => console.log('[evolution-webhook] Background profile fetch error:', err));
     }
     
@@ -626,7 +643,7 @@ async function processMessageUpsert(payload: EvolutionWebhookPayload, supabase: 
     // Get instance data - try by instance_name first (self-hosted), then by instance_id_external (Cloud)
     let { data: instanceData } = await supabase
       .from('whatsapp_instances')
-      .select('id, instance_name, instance_id_external, status')
+      .select('id, instance_name, instance_id_external, provider_type, status')
       .eq('instance_name', instance)
       .maybeSingle();
 
@@ -634,7 +651,7 @@ async function processMessageUpsert(payload: EvolutionWebhookPayload, supabase: 
     if (!instanceData) {
       const { data: cloudInstance } = await supabase
         .from('whatsapp_instances')
-        .select('id, instance_name, instance_id_external, status')
+        .select('id, instance_name, instance_id_external, provider_type, status')
         .eq('instance_id_external', instance)
         .maybeSingle();
       instanceData = cloudInstance;
@@ -644,6 +661,12 @@ async function processMessageUpsert(payload: EvolutionWebhookPayload, supabase: 
       console.error('[evolution-webhook] Instance not found:', instance);
       return;
     }
+    
+    // Determine which identifier to use for Evolution API calls
+    // Cloud instances use instance_id_external (UUID), self-hosted use instance_name
+    const evolutionInstanceId = instanceData.provider_type === 'cloud' && instanceData.instance_id_external
+      ? instanceData.instance_id_external
+      : instanceData.instance_name;
     
     // Update status to 'connected' if processing a message (instance is clearly connected)
     if (instanceData.status !== 'connected') {
@@ -684,7 +707,8 @@ async function processMessageUpsert(payload: EvolutionWebhookPayload, supabase: 
       key.fromMe,
       secrets.api_url,
       secrets.api_key,
-      instanceData.instance_name
+      evolutionInstanceId,
+      instanceData.provider_type || 'self_hosted'
     );
 
     if (!contactId) {
@@ -728,10 +752,11 @@ async function processMessageUpsert(payload: EvolutionWebhookPayload, supabase: 
           mediaUrl = await downloadAndUploadMedia(
             secrets.api_url,
             secrets.api_key,
-            instanceData.instance_name,
+            evolutionInstanceId,
             key,
             supabase,
-            mediaMimetype
+            mediaMimetype,
+            instanceData.provider_type || 'self_hosted'
           );
         }
       }
