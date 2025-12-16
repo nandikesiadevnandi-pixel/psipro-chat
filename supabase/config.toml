@@ -54,3 +54,7 @@ verify_jwt = true
 
 [functions.setup-remix-infrastructure]
 verify_jwt = true
+
+# Teste de conexão Evolution (sem JWT para permitir teste antes de salvar)
+[functions.test-evolution-connection]
+verify_jwt = false

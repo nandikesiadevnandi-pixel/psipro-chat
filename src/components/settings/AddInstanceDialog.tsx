@@ -31,6 +31,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useWhatsAppInstances } from "@/hooks/whatsapp";
 import { Loader2, Check, Copy, Link as LinkIcon, Info } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nome obrigatório"),
@@ -94,62 +95,28 @@ export const AddInstanceDialog = ({ open, onOpenChange }: AddInstanceDialogProps
 
     setIsTestingConnection(true);
     try {
-      // Use correct authentication header based on provider type
-      const headers: Record<string, string> = values.provider_type === 'cloud'
-        ? { Authorization: `Bearer ${values.api_key}` }
-        : { apikey: values.api_key };
-
-      // For Cloud, use instance_id_external (UUID) instead of instance_name
-      const instanceIdentifier = values.provider_type === 'cloud' 
-        ? values.instance_id_external 
-        : values.instance_name;
-
-      const fullUrl = `${values.api_url}/instance/connectionState/${instanceIdentifier}`;
-      
-      // DEBUG LOGS - Diagnóstico Evolution Cloud
-      console.group('🔍 DEBUG: Teste de Conexão Evolution API');
-      console.log('Provider Type:', values.provider_type);
-      console.log('API URL Base:', values.api_url);
-      console.log('Instance Name:', values.instance_name);
-      console.log('Instance ID External:', values.instance_id_external);
-      console.log('Instance Identifier (usado na URL):', instanceIdentifier);
-      console.log('Full URL:', fullUrl);
-      console.log('Headers:', {
-        ...headers,
-        // Mascara parte do token por segurança
-        ...(headers.Authorization ? { Authorization: `Bearer ${values.api_key.substring(0, 10)}...${values.api_key.slice(-4)}` } : {}),
-        ...(headers.apikey ? { apikey: `${values.api_key.substring(0, 10)}...${values.api_key.slice(-4)}` } : {})
+      // Call edge function to test connection (avoids CORS issues)
+      const { data, error } = await supabase.functions.invoke('test-evolution-connection', {
+        body: {
+          api_url: values.api_url,
+          api_key: values.api_key,
+          instance_name: values.instance_name,
+          instance_id_external: values.instance_id_external,
+          provider_type: values.provider_type
+        }
       });
-      console.groupEnd();
 
-      const response = await fetch(fullUrl, { headers });
-
-      // DEBUG: Log da resposta
-      console.group('📥 DEBUG: Resposta da API');
-      console.log('Status:', response.status);
-      console.log('Status Text:', response.statusText);
-      console.log('OK:', response.ok);
-      
-      const responseText = await response.text();
-      console.log('Response Body (raw):', responseText);
-      
-      let responseData;
-      try {
-        responseData = JSON.parse(responseText);
-        console.log('Response Body (parsed):', responseData);
-      } catch {
-        console.log('Response não é JSON válido');
+      if (error) {
+        throw new Error(error.message || 'Falha ao testar conexão');
       }
-      console.groupEnd();
 
-      if (!response.ok) {
-        throw new Error(responseData?.message || responseText || "Connection test failed");
+      if (data?.error) {
+        throw new Error(data.error);
       }
       
       setConnectionTested(true);
       toast.success("Conexão testada com sucesso!");
     } catch (error) {
-      console.error('❌ DEBUG: Erro no teste de conexão:', error);
       const errorMessage = error instanceof Error ? error.message : "Falha ao testar conexão";
       toast.error(`Falha ao testar conexão: ${errorMessage}`);
       setConnectionTested(false);
