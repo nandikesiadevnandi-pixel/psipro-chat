@@ -6,12 +6,7 @@ const corsHeaders = {
 };
 
 function getEvolutionAuthHeaders(apiKey: string, providerType: string): Record<string, string> {
-  if (providerType === 'cloud') {
-    return {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    };
-  }
+  // Evolution Cloud confirmou: ambos usam header 'apikey'
   return {
     'apikey': apiKey,
     'Content-Type': 'application/json'

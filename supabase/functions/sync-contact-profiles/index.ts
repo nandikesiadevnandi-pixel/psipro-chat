@@ -7,9 +7,8 @@ const corsHeaders = {
 
 // Helper function to get Evolution API auth headers based on provider type
 function getEvolutionAuthHeaders(apiKey: string, providerType: string): Record<string, string> {
-  return providerType === 'cloud'
-    ? { Authorization: `Bearer ${apiKey}` }
-    : { apikey: apiKey };
+  // Evolution Cloud confirmou: ambos usam header 'apikey'
+  return { apikey: apiKey };
 }
 
 Deno.serve(async (req) => {
