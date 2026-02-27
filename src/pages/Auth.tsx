@@ -4,11 +4,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { LoginForm } from '@/components/auth/LoginForm';
 import { SignupForm } from '@/components/auth/SignupForm';
 import { MessageSquare } from 'lucide-react';
+import RemixOverlay from '@/components/RemixOverlay';
 
 export default function Auth() {
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
 
   return (
+    <>
+    <RemixOverlay />
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
       <div className="w-full max-w-md">
         {/* Logo/Header */}
@@ -56,5 +59,6 @@ export default function Auth() {
         </p>
       </div>
     </div>
+    </>
   );
 }
