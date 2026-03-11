@@ -13,6 +13,7 @@ import WhatsApp from "./pages/WhatsApp";
 import WhatsAppSettings from "./pages/WhatsAppSettings";
 import WhatsAppRelatorio from "./pages/WhatsAppRelatorio";
 import WhatsAppContatos from "./pages/WhatsAppContatos";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
