@@ -1,12 +1,27 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { SignupForm } from '@/components/auth/SignupForm';
 import { MessageSquare } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Auth() {
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
+  const [registrationEnabled, setRegistrationEnabled] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const fetchRegistrationSetting = async () => {
+      const { data } = await supabase
+        .from('system_settings')
+        .select('registration_enabled')
+        .limit(1)
+        .single();
+      if (data) setRegistrationEnabled(data.registration_enabled);
+      else setRegistrationEnabled(true); // default to enabled if no settings
+    };
+    fetchRegistrationSetting();
+  }, []);
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
@@ -34,18 +49,22 @@ export default function Auth() {
           </CardHeader>
           <CardContent>
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'login' | 'signup')}>
-              <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsList className={`grid w-full mb-6 ${registrationEnabled === false ? 'grid-cols-1' : 'grid-cols-2'}`}>
                 <TabsTrigger value="login">Entrar</TabsTrigger>
-                <TabsTrigger value="signup">Cadastrar</TabsTrigger>
+                {registrationEnabled !== false && (
+                  <TabsTrigger value="signup">Cadastrar</TabsTrigger>
+                )}
               </TabsList>
               
               <TabsContent value="login">
                 <LoginForm />
               </TabsContent>
               
-              <TabsContent value="signup">
-                <SignupForm />
-              </TabsContent>
+              {registrationEnabled !== false && (
+                <TabsContent value="signup">
+                  <SignupForm />
+                </TabsContent>
+              )}
             </Tabs>
           </CardContent>
         </Card>
