@@ -49,18 +49,22 @@ export default function Auth() {
           </CardHeader>
           <CardContent>
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'login' | 'signup')}>
-              <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsList className={`grid w-full mb-6 ${registrationEnabled === false ? 'grid-cols-1' : 'grid-cols-2'}`}>
                 <TabsTrigger value="login">Entrar</TabsTrigger>
-                <TabsTrigger value="signup">Cadastrar</TabsTrigger>
+                {registrationEnabled !== false && (
+                  <TabsTrigger value="signup">Cadastrar</TabsTrigger>
+                )}
               </TabsList>
               
               <TabsContent value="login">
                 <LoginForm />
               </TabsContent>
               
-              <TabsContent value="signup">
-                <SignupForm />
-              </TabsContent>
+              {registrationEnabled !== false && (
+                <TabsContent value="signup">
+                  <SignupForm />
+                </TabsContent>
+              )}
             </Tabs>
           </CardContent>
         </Card>
