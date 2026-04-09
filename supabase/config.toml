@@ -1,1 +1,4 @@
 project_id = "lbgvaaddiqqinzrbppss"
+
+[functions.ensure-user-profile]
+verify_jwt = false
