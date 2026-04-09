@@ -59,6 +59,12 @@ export default {
         info: {
           DEFAULT: "hsl(var(--info))",
         },
+        chart: {
+          amber: "hsl(var(--chart-amber))",
+          green: "hsl(var(--chart-green))",
+          blue: "hsl(var(--chart-blue))",
+          rose: "hsl(var(--chart-rose))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
