@@ -13,7 +13,7 @@ export default function Auth() {
       <div className="w-full max-w-md">
         {/* Logo/Header */}
         <div className="text-center mb-8">
-          <img src={psiproLogo} alt="PsiPro" className="h-20 mx-auto mb-4" />
+          <img src={psiproLogo} alt="PsiPro" className="h-36 mx-auto mb-4" />
           <p className="text-muted-foreground">Gerencie suas conversas com inteligência</p>
         </div>
 
