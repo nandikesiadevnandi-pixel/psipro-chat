@@ -13,10 +13,7 @@ export default function Auth() {
       <div className="w-full max-w-md">
         {/* Logo/Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl mb-4">
-            <MessageSquare className="w-8 h-8 text-primary-foreground" />
-          </div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">WhatsApp CRM</h1>
+          <img src={psiproLogo} alt="PsiPro" className="h-20 mx-auto mb-4" />
           <p className="text-muted-foreground">Gerencie suas conversas com inteligência</p>
         </div>
 
