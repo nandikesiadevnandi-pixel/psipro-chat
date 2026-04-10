@@ -30,6 +30,7 @@ const App = () => {
               <Sonner />
               <Routes>
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/pending-approval" element={<ProtectedRoute><PendingApproval /></ProtectedRoute>} />
                 <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
                 <Route path="/whatsapp" element={<ProtectedRoute><WhatsApp /></ProtectedRoute>} />
