@@ -13,6 +13,7 @@ import WhatsApp from "./pages/WhatsApp";
 import WhatsAppSettings from "./pages/WhatsAppSettings";
 import WhatsAppRelatorio from "./pages/WhatsAppRelatorio";
 import WhatsAppContatos from "./pages/WhatsAppContatos";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => {
               <Sonner />
               <Routes>
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/pending-approval" element={<ProtectedRoute><PendingApproval /></ProtectedRoute>} />
                 <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
                 <Route path="/whatsapp" element={<ProtectedRoute><WhatsApp /></ProtectedRoute>} />
