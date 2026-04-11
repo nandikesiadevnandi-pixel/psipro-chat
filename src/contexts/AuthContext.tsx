@@ -99,12 +99,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.warn('⚠️ [AuthContext] No profile found for user:', userId);
       }
 
-      // Load role
-      const { data: roleData, error: roleError } = await supabase
+      // Load role — priority: admin > supervisor > agent
+      const ROLE_PRIORITY: Record<string, number> = { admin: 0, supervisor: 1, agent: 2 };
+      const { data: rolesData, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', userId)
-        .maybeSingle();
+        .eq('user_id', userId);
+      const roleData = rolesData && rolesData.length > 0
+        ? rolesData.sort((a, b) => (ROLE_PRIORITY[a.role] ?? 99) - (ROLE_PRIORITY[b.role] ?? 99))[0]
+        : null;
 
       if (roleError) {
         console.error('❌ [AuthContext] Error loading role:', roleError);
