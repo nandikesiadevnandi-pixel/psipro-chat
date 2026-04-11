@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, User as UserIcon, Circle, Moon, Sun } from 'lucide-react';
+import { LogOut, User as UserIcon, Circle, Sun, Moon } from 'lucide-react';
 import { ProfileModal } from './ProfileModal';
 
 const statusColors = {
@@ -61,7 +61,7 @@ export function UserMenu() {
                 {initials}
               </AvatarFallback>
             </Avatar>
-            <Circle 
+            <Circle
               className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 ${statusColors[profile.status]} border-2 border-background rounded-full`}
               fill="currentColor"
             />
@@ -74,23 +74,32 @@ export function UserMenu() {
           </div>
         </button>
       </DropdownMenuTrigger>
-      
+
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        
+
         <DropdownMenuItem onClick={() => setIsProfileOpen(true)}>
           <UserIcon className="mr-2 h-4 w-4" />
           <span>Perfil</span>
         </DropdownMenuItem>
 
         <DropdownMenuItem onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
-          {theme === 'dark' ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
-          <span>{theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}</span>
+          {theme === 'dark' ? (
+            <>
+              <Sun className="mr-2 h-4 w-4" />
+              <span>Modo Claro</span>
+            </>
+          ) : (
+            <>
+              <Moon className="mr-2 h-4 w-4" />
+              <span>Modo Escuro</span>
+            </>
+          )}
         </DropdownMenuItem>
-        
+
         <DropdownMenuSeparator />
-        
+
         <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
           <LogOut className="mr-2 h-4 w-4" />
           <span>Sair</span>

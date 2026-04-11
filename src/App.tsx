@@ -22,8 +22,8 @@ const queryClient = new QueryClient();
 const App = () => {
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+      <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <AuthProvider>
             <NotificationProvider>
@@ -46,8 +46,8 @@ const App = () => {
             </NotificationProvider>
           </AuthProvider>
         </BrowserRouter>
-      </ThemeProvider>
-    </QueryClientProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 };
 
