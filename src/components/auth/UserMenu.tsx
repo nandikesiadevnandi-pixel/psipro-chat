@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from 'next-themes';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,7 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, User as UserIcon, Circle } from 'lucide-react';
+import { LogOut, User as UserIcon, Circle, Moon, Sun } from 'lucide-react';
 import { ProfileModal } from './ProfileModal';
 
 const statusColors = {
@@ -29,6 +30,7 @@ const roleLabels = {
 
 export function UserMenu() {
   const { profile, role, signOut } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -80,6 +82,11 @@ export function UserMenu() {
         <DropdownMenuItem onClick={() => setIsProfileOpen(true)}>
           <UserIcon className="mr-2 h-4 w-4" />
           <span>Perfil</span>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+          {theme === 'dark' ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
+          <span>{theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}</span>
         </DropdownMenuItem>
         
         <DropdownMenuSeparator />
