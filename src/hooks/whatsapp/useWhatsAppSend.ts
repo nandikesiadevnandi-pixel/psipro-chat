@@ -25,6 +25,10 @@ export const useWhatsAppSend = () => {
       });
 
       if (error) throw error;
+      if (data && !data.success) {
+        console.error('[useWhatsAppSend] API error:', data);
+        throw new Error(data.error || 'Failed to send message');
+      }
       return data;
     },
     onMutate: async (newMessage) => {
