@@ -67,8 +67,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return false;
       }
 
-      if (data?.profileCreated || data?.roleCreated) {
-        console.log('✅ [AuthContext] Profile/role auto-created:', data);
+      if (data?.profileCreated || data?.roleCreated || data?.roleUpgraded) {
+        console.log('✅ [AuthContext] Profile/role auto-created or upgraded:', data);
         return true;
       }
       
@@ -119,15 +119,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // If profile OR role is missing, try to auto-create them
-      if (!profileData || !roleData) {
-        console.log('⚠️ [AuthContext] Profile or role missing, attempting auto-creation...');
-        
+      // Also call if user has 'agent' role — ensure-user-profile will auto-upgrade to admin if no active admin exists
+      const needsCheck = !profileData || !roleData || roleData?.role === 'agent';
+      if (needsCheck) {
+        if (!profileData || !roleData) {
+          console.log('⚠️ [AuthContext] Profile or role missing, attempting auto-creation...');
+        } else {
+          console.log('🔍 [AuthContext] Checking if admin role upgrade is needed...');
+        }
+
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.access_token) {
           const wasCreated = await ensureUserProfile(userId, session.access_token);
           if (wasCreated) {
-            // Reload user data after creation
-            console.log('🔄 [AuthContext] Reloading user data after auto-creation...');
+            // Reload user data after creation or upgrade
+            console.log('🔄 [AuthContext] Reloading user data after auto-creation/upgrade...');
             setTimeout(() => {
               loadUserData(userId);
             }, 500);

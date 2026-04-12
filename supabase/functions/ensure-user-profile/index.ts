@@ -127,9 +127,11 @@ Deno.serve(async (req) => {
       .eq('user_id', user.id)
       .maybeSingle();
 
+    let roleUpgraded = false;
+
     if (!existingRole) {
       console.log('⚠️ Role missing, assigning...');
-      
+
       // Re-count profiles after potential creation
       const { count: currentProfileCount } = await supabaseAdmin
         .from('profiles')
@@ -151,6 +153,38 @@ Deno.serve(async (req) => {
         roleCreated = true;
         console.log(`✅ Role ${assignedRole} assigned`);
       }
+    } else if (existingRole.role === 'agent') {
+      // Check if there's any admin with an active profile (i.e., a real admin account)
+      const { data: adminRoles } = await supabaseAdmin
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'admin');
+
+      const adminUserIds = (adminRoles || []).map((r: { user_id: string }) => r.user_id);
+
+      let hasActiveAdmin = false;
+      if (adminUserIds.length > 0) {
+        const { count: adminProfileCount } = await supabaseAdmin
+          .from('profiles')
+          .select('*', { count: 'exact', head: true })
+          .in('id', adminUserIds);
+        hasActiveAdmin = (adminProfileCount ?? 0) > 0;
+      }
+
+      if (!hasActiveAdmin) {
+        // No active admin exists — upgrade this user to admin
+        console.log(`🔧 No active admin found. Upgrading user ${user.id} to admin...`);
+        await supabaseAdmin.from('user_roles').delete().eq('user_id', user.id).eq('role', 'agent');
+        const { error: upgradeError } = await supabaseAdmin
+          .from('user_roles')
+          .upsert({ user_id: user.id, role: 'admin' }, { onConflict: 'user_id,role' });
+        if (!upgradeError) {
+          roleUpgraded = true;
+          console.log(`✅ User ${user.id} (${user.email}) upgraded to admin`);
+        } else {
+          console.error('❌ Error upgrading role:', upgradeError);
+        }
+      }
     }
 
     return new Response(JSON.stringify({
@@ -158,6 +192,7 @@ Deno.serve(async (req) => {
       profileCreated,
       roleCreated,
       profileAutoApproved,
+      roleUpgraded,
       existingProfile: !!existingProfile,
       existingRole: !!existingRole
     }), {
