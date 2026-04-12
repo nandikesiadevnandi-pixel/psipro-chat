@@ -144,10 +144,16 @@ Deno.serve(async (req) => {
 
     if (!evolutionResponse.ok) {
       const errorText = await evolutionResponse.text();
-      console.error('[send-whatsapp-message] Evolution API error:', errorText);
+      console.error(`[send-whatsapp-message] Evolution API error (${evolutionResponse.status}):`, errorText);
       return new Response(
-        JSON.stringify({ success: false, error: 'Failed to send message via Evolution API' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ 
+          success: false, 
+          error: `Evolution API returned ${evolutionResponse.status}`,
+          detail: errorText.substring(0, 200),
+          endpoint,
+          fallback: evolutionResponse.status >= 500 || evolutionResponse.status === 429,
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
