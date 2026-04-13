@@ -108,6 +108,7 @@ Deno.serve(async (req) => {
     const providerType = (conversation as any).whatsapp_instances.provider_type || 'self_hosted';
     const instanceIdExternal = (conversation as any).whatsapp_instances.instance_id_external;
     const contact = (conversation as any).whatsapp_contacts;
+    const isEvolutionGo = providerType === 'evolution_go';
 
     // For Cloud, use instance_id_external (UUID) instead of instance_name
     const instanceIdentifier = providerType === 'cloud' && instanceIdExternal
@@ -119,13 +120,10 @@ Deno.serve(async (req) => {
     // Determine destination number format
     const destinationNumber = getDestinationNumber(contact.phone_number);
 
-    // Build request for Evolution API
-    const { endpoint, requestBody } = buildEvolutionRequest(
-      secrets.api_url,
-      instanceIdentifier,
-      destinationNumber,
-      body
-    );
+    // Build request for Evolution API (Node.js or GO)
+    const { endpoint, requestBody } = isEvolutionGo
+      ? buildEvolutionGoRequest(secrets.api_url, destinationNumber, body)
+      : buildEvolutionRequest(secrets.api_url, instanceIdentifier, destinationNumber, body);
 
     console.log('[send-whatsapp-message] Evolution API endpoint:', endpoint);
 
@@ -334,6 +332,76 @@ function buildEvolutionRequest(
 
       return {
         endpoint: `${baseUrl}/message/sendMedia/${instanceName}`,
+        requestBody,
+      };
+    }
+
+    default:
+      throw new Error(`Unsupported message type: ${body.messageType}`);
+  }
+}
+
+// Build request for Evolution GO (different endpoint structure)
+function buildEvolutionGoRequest(
+  apiUrl: string,
+  number: string,
+  body: SendMessageRequest
+): { endpoint: string; requestBody: any } {
+  let baseUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
+  baseUrl = baseUrl.replace(/\/manager$/, '');
+
+  switch (body.messageType) {
+    case 'text': {
+      const requestBody: any = {
+        number,
+        text: body.content,
+      };
+
+      if (body.quotedMessageId) {
+        requestBody.quoted = {
+          key: body.quotedMessageId,
+        };
+      }
+
+      return {
+        endpoint: `${baseUrl}/send/text`,
+        requestBody,
+      };
+    }
+
+    case 'audio': {
+      const mediaUrl = body.mediaUrl || body.mediaBase64;
+      if (!mediaUrl) throw new Error('Missing audio data');
+
+      return {
+        endpoint: `${baseUrl}/send/media`,
+        requestBody: {
+          number,
+          url: mediaUrl,
+          type: 'audio',
+        },
+      };
+    }
+
+    case 'image':
+    case 'video':
+    case 'document': {
+      const requestBody: any = {
+        number,
+        url: body.mediaBase64 || body.mediaUrl,
+        type: body.messageType,
+      };
+
+      if (body.content) {
+        requestBody.caption = body.content;
+      }
+
+      if (body.messageType === 'document' && body.fileName) {
+        requestBody.filename = body.fileName;
+      }
+
+      return {
+        endpoint: `${baseUrl}/send/media`,
         requestBody,
       };
     }
