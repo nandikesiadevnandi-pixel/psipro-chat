@@ -992,6 +992,40 @@ async function processMessageEdit(payload: EvolutionWebhookPayload, supabase: an
   }
 }
 
+// Normalize Evolution GO event names to Evolution Node.js format
+function normalizeEventName(event: string): string {
+  const eventMap: Record<string, string> = {
+    // Evolution GO format → Evolution Node.js format
+    'Message': 'messages.upsert',
+    'message': 'messages.upsert',
+    'MessageUpdate': 'messages.update',
+    'message.update': 'messages.update',
+    'Connected': 'connection.update',
+    'connected': 'connection.update',
+    'Disconnected': 'connection.update',
+    'disconnected': 'connection.update',
+    'ConnectionUpdate': 'connection.update',
+    'ChatPresence': 'chat.presence',
+    'chatPresence': 'chat.presence',
+    'StatusInstance': 'connection.update',
+  };
+  return eventMap[event] || event;
+}
+
+// Extract instance name from various payload formats
+function extractInstanceName(payload: any): string | undefined {
+  // Evolution Node.js: payload.instance
+  if (payload.instance && typeof payload.instance === 'string') {
+    return payload.instance;
+  }
+  // Evolution GO may nest instance info
+  if (payload.instance && typeof payload.instance === 'object') {
+    return payload.instance.instanceName || payload.instance.name || payload.instance.id;
+  }
+  // Other possible fields
+  return payload.instanceName || payload.server_url || payload.apikey || undefined;
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -1003,11 +1037,27 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const payload: EvolutionWebhookPayload = await req.json();
-    console.log('[evolution-webhook] Event received:', payload.event, 'Instance:', payload.instance);
+    const rawPayload = await req.json();
+    
+    // Log full payload keys for debugging new formats
+    console.log('[evolution-webhook] Raw payload keys:', Object.keys(rawPayload));
+    
+    // Extract and normalize event and instance
+    const rawEvent = rawPayload.event;
+    const normalizedEvent = normalizeEventName(rawEvent);
+    const instanceName = extractInstanceName(rawPayload);
+    
+    // Build normalized payload
+    const payload: EvolutionWebhookPayload = {
+      event: normalizedEvent,
+      instance: instanceName || '',
+      data: rawPayload.data || rawPayload,
+    };
+    
+    console.log('[evolution-webhook] Event:', rawEvent, '→', normalizedEvent, 'Instance:', instanceName);
 
     // Route to appropriate handler
-    switch (payload.event) {
+    switch (normalizedEvent) {
       case 'messages.upsert':
         // Check if it's an edited message
         if (isEditedMessage(payload.data?.message)) {
@@ -1022,13 +1072,16 @@ Deno.serve(async (req) => {
       case 'connection.update':
         await processConnectionUpdate(payload, supabase);
         break;
+      case 'chat.presence':
+        console.log('[evolution-webhook] Chat presence event ignored');
+        break;
       default:
-        console.log('[evolution-webhook] Unhandled event type:', payload.event);
+        console.log('[evolution-webhook] Unhandled event type:', rawEvent, '(normalized:', normalizedEvent, ')');
     }
 
     // Always return 200 to prevent webhook reprocessing
     return new Response(
-      JSON.stringify({ success: true, event: payload.event }),
+      JSON.stringify({ success: true, event: normalizedEvent }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
   } catch (error) {
