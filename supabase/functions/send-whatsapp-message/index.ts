@@ -108,6 +108,7 @@ Deno.serve(async (req) => {
     const providerType = (conversation as any).whatsapp_instances.provider_type || 'self_hosted';
     const instanceIdExternal = (conversation as any).whatsapp_instances.instance_id_external;
     const contact = (conversation as any).whatsapp_contacts;
+    const isEvolutionGo = providerType === 'evolution_go';
 
     // For Cloud, use instance_id_external (UUID) instead of instance_name
     const instanceIdentifier = providerType === 'cloud' && instanceIdExternal
@@ -119,13 +120,10 @@ Deno.serve(async (req) => {
     // Determine destination number format
     const destinationNumber = getDestinationNumber(contact.phone_number);
 
-    // Build request for Evolution API
-    const { endpoint, requestBody } = buildEvolutionRequest(
-      secrets.api_url,
-      instanceIdentifier,
-      destinationNumber,
-      body
-    );
+    // Build request for Evolution API (Node.js or GO)
+    const { endpoint, requestBody } = isEvolutionGo
+      ? buildEvolutionGoRequest(secrets.api_url, destinationNumber, body)
+      : buildEvolutionRequest(secrets.api_url, instanceIdentifier, destinationNumber, body);
 
     console.log('[send-whatsapp-message] Evolution API endpoint:', endpoint);
 
