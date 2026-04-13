@@ -2,3 +2,6 @@ project_id = "lbgvaaddiqqinzrbppss"
 
 [functions.ensure-user-profile]
 verify_jwt = false
+
+[functions.evolution-webhook]
+verify_jwt = false
