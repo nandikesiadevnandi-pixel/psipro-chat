@@ -1047,11 +1047,43 @@ Deno.serve(async (req) => {
     const normalizedEvent = normalizeEventName(rawEvent);
     const instanceName = extractInstanceName(rawPayload);
     
+    // Normalize the data payload for Evolution GO compatibility
+    let data = rawPayload.data || rawPayload;
+    
+    // Log data keys for debugging payload structure
+    console.log('[evolution-webhook] Data keys:', Object.keys(data));
+    
+    // Evolution GO sends message fields flat in data (no "key" wrapper)
+    // Evolution Node.js sends data.key.{id, remoteJid, fromMe} + data.message + data.pushName + data.messageTimestamp
+    if (normalizedEvent === 'messages.upsert' && data && !data.key && data.remoteJid) {
+      console.log('[evolution-webhook] Normalizing Evolution GO message payload');
+      data = {
+        key: {
+          id: data.id || data.messageId || `go_${Date.now()}`,
+          remoteJid: data.remoteJid,
+          fromMe: data.fromMe ?? false,
+        },
+        pushName: data.pushName || data.senderName || '',
+        message: data.message || {},
+        messageTimestamp: data.messageTimestamp || data.timestamp || Math.floor(Date.now() / 1000),
+        // Keep original data for reference
+        _originalGoData: data,
+      };
+      
+      // If Evolution GO puts text directly in data instead of data.message
+      if (!data.message.conversation && !data.message.extendedTextMessage && data._originalGoData.body) {
+        data.message = { conversation: data._originalGoData.body };
+      }
+      if (!data.message.conversation && !data.message.extendedTextMessage && data._originalGoData.text) {
+        data.message = { conversation: data._originalGoData.text };
+      }
+    }
+    
     // Build normalized payload
     const payload: EvolutionWebhookPayload = {
       event: normalizedEvent,
       instance: instanceName || '',
-      data: rawPayload.data || rawPayload,
+      data,
     };
     
     console.log('[evolution-webhook] Event:', rawEvent, '→', normalizedEvent, 'Instance:', instanceName);
